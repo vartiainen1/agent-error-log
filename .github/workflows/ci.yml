@@ -1,0 +1,39 @@
+name: CI
+
+# Runs on every push and pull request. Backstop for the git hook: even if a
+# commit bypasses the local commit-msg gate (--no-verify), a broken error log
+# or test failure can no longer hide — the check fails here.
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    name: tests + linter (py ${{ matrix.python-version }} / ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile check
+        run: python -m py_compile check_errors.py start.py
+
+      - name: Unit tests
+        run: python _test_errors.py
+
+      - name: Error-log linter (CI backstop)
+        run: python check_errors.py
+
+      - name: Hook syntax check
+        shell: bash
+        run: sh -n git-commitmsg-hook.sh hooks/block-no-verify.sh hooks/block-no-verify-hook.sh

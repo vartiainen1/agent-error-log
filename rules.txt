@@ -1,0 +1,157 @@
+================================================================================
+<YOUR PROJECT NAME> — RULES OF ENGAGEMENT
+(how your coding assistant / AI agent should behave in this workspace)
+================================================================================
+
+================================================================================
+0) THE THREE-FILE SYSTEM
+================================================================================
+These three files are the working instructions for the AI assistant while it
+works in this workspace. They cross-reference each other — treat them as ONE
+system. This file is the RULES file. Its companions:
+
+  notes.txt        general text / session notes (what this project is,
+                   ongoing topics)
+  rules.txt        THIS FILE — the rules the assistant follows (read first)
+  errors.txt       every error encountered + its cause + the fix that worked
+
+Division of labor:
+  - notes / general text    -> notes.txt
+  - behavior / conventions  -> rules.txt (this file)
+  - failures / fixes        -> errors.txt
+When something breaks, log it in errors.txt using the template at its end.
+When an open topic changes, update the session notes in notes.txt.
+
+================================================================================
+1) WHO I AM
+================================================================================
+- Name: <YOUR ASSISTANT NAME>. Runs inside <YOUR PRODUCT / CLI>.
+- I work inside this repo and only edit files here unless the user
+  explicitly asks otherwise.
+
+================================================================================
+2) HOW I WORK
+================================================================================
+- ERROR-HANDLING PROTOCOL (MANDATORY): when you encounter an error, do NOT
+  fix it immediately. FIRST log it in errors.txt (template at its end).
+  ONLY after it is logged are you allowed to fix it. Log first, fix after —
+  always, no exceptions.
+  Tooling: `python check_errors.py` validates the log; `--has-entry "<AREA>"`
+  gates a fix (exit 0 only if the error is already logged); `--add` scaffolds
+  a new entry in the template format; `--archive-days N` archives old FIXED
+  entries (preview only unless --apply).
+  Git gate: this folder is a git repo; the commit-msg hook
+  (git-commitmsg-hook.sh, installed as .git/hooks/commit-msg) blocks code
+  commits whose message lacks an "AREA: <text>" marker matching a logged
+  entry — write: git commit -m "... (AREA: <what broke>)".
+- SESSION START: at the beginning of every session, run `python start.py`
+  (Windows: double-click start.bat) to print the reading order, the mandatory
+  rules, the open errors and the latest session note.
+- CHECK-BEFORE-CODING PROTOCOL (MANDATORY): before writing or modifying ANY
+  code, review errors.txt FIRST so you do not repeat past mistakes. Read the
+  log, note the errors relevant to what you are about to write, and avoid
+  them.
+- Follow existing project conventions. Read the surrounding code, tests, and
+  config BEFORE writing anything. Never invent conventions of your own.
+- Make the SMALLEST change that satisfies the request. No gold-plating, no
+  speculative refactors, no unrequested cleanup.
+- Reuse existing helpers/functions instead of reimplementing them.
+- If a library or service is needed, verify it exists in the project
+  (requirements, package.json, imports) or research it before using it.
+- When you change an exported symbol, update every reference to it.
+- Don't surprise the user: no destructive commands, no production changes,
+  no committing/pushing unless explicitly asked.
+- Ask for clarification when the request is ambiguous or the options are
+  meaningfully different.
+
+================================================================================
+3) CODE RULES
+================================================================================
+- Match the existing style: plain, dependency-light, stdlib-first. No pip
+  packages unless required.
+- UTF-8 everywhere; Windows consoles get reconfigured to UTF-8 in scripts.
+- Keep tool descriptions / system prompts short and factual — LLMs narrate
+  intent instead of calling tools when prompts get verbose.
+- Validate changes: run tests / typechecks / a quick run of the touched
+  script when practical. Review with a second pass (code review agent).
+- Before writing code, review errors.txt (CHECK-BEFORE-CODING PROTOCOL,
+  section 2) so past mistakes are not repeated.
+
+================================================================================
+4) YOUR PROJECT — NOTES FOR THE ASSISTANT
+================================================================================
+<Describe your stack, key files, and known constraints here. Delete this
+placeholder section or expand it to map your repo:
+  - Stack / frameworks / entry points
+  - Key files and what they do
+  - Known constraints and limitations
+  - How to run tests and lint>
+
+================================================================================
+5) CURRENT OPEN TOPICS
+================================================================================
+<List open decisions / discussions here so any session can pick them up.
+Delete this section if you have none.>
+
+================================================================================
+6) NON-NEGOTIABLES
+================================================================================
+- LOG BEFORE FIXING: never fix an error before logging it in errors.txt.
+  Log first, fix after — no exceptions.
+- Be honest about what you did and did not do. No claiming success without
+  verification.
+- If a command is risky or hard to undo, say so before running it.
+- Final summaries stay short: a few words per change.
+- The user is the boss: if their instruction conflicts with a rule here,
+  their instruction wins.
+================================================================================
+
+================================================================================
+7) LESSONS LEARNED FROM THE ERROR LOG
+================================================================================
+Distilled root causes from errors.txt (see that log for the full
+symptom -> cause -> fix per entry). Re-read these before coding — they are
+WHY past errors happened, and what to avoid repeating.
+
+The five starter lessons below are generic root-cause patterns worth keeping.
+Replace them with YOUR OWN causes as your log grows.
+
+1. DATA ROBUSTNESS
+   - Missing dict keys -> KeyError; csv.DictReader fills missing columns
+     with None -> None.strip() crashes.
+   - Use row.get('amount', 0) / (row.get(...) or '').strip(); check a key
+     exists and is not None before operating on any value.
+
+2. LLM MODEL QUIRKS (your provider/model)
+   - Baked-in system-prompt / template guidance can be INERT (byte-identical
+     output) — verify, don't assume.
+   - Verbose tool descriptions and system messages that name tools push the
+     model into XML/prose instead of JSON tool calls; it may hallucinate
+     tool names and malformed arguments.
+   - Fix behavior in the prompt itself; keep tool definitions short and
+     factual; keep the system prompt generic; handle multiple output styles
+     with retries.
+
+3. ENVIRONMENT / RELIABILITY
+   - Search engines and APIs throttle back-to-back queries; keep gaps and
+     fallbacks.
+   - Wrong Python (venv missing a package) breaks scripts; PATH order can
+     pick the wrong interpreter — call the right one explicitly.
+   - Derived models / built artifacts may not exist; keep automatic
+     fallbacks with readable messages.
+
+4. SCREEN-VISION (GAME / UI AUTOMATION)
+   - Saved sprite colors drift from the live sprite; trackers glue to UI
+     blobs — rediscover colors during verified live runs; reject oversized
+     and edge (UI) blobs.
+   - OCR misreads fake on-screen clocks — require additional signals
+     (e.g. motion) and sanity clamps.
+   - Modal screens ignore Enter/Space cycling — press explicit keys.
+   - Repeated identical actions loop forever — fingerprint actions and
+     break after N repeats.
+
+5. LOG / TEMPLATE DISCIPLINE
+   - Unenforced entries drift (ERROR v1:, FIX (works):, missing CAUSE) and
+     become unparseable — use check_errors.py (--add / --has-entry /
+     validate) so the log stays machine-readable.
+================================================================================

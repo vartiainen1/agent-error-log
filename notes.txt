@@ -1,0 +1,71 @@
+================================================================================
+<YOUR PROJECT NAME> — NOTES
+================================================================================
+
+================================================================================
+FOR THE ASSISTANT — READ ME FIRST
+================================================================================
+These three files are the working instructions for the AI assistant while it
+works in this workspace. This is the NOTES file (general text + session
+notes). To know EXACTLY how to work in this workspace, do this in order:
+  1. READ rules.txt FIRST — the RULES file: how the assistant should behave,
+     code conventions, repo map, known constraints, non-negotiables.
+  2. CHECK errors.txt BEFORE debugging AND before writing code — the ERROR
+     LOG: known errors, causes and fixes are already documented there.
+     Don't repeat mistakes.
+  3. RETURN here (notes.txt) for general text: what this project is, and
+     current session notes / open topics.
+All three files cross-reference each other: any one leads to the other two.
+
+================================================================================
+THE THREE-FILE SYSTEM
+================================================================================
+  notes.txt        = general text / session notes (this file)
+  rules.txt        = RULES — how the assistant behaves, conventions, repo
+                     map, non-negotiables
+  errors.txt       = ERROR LOG — every error encountered, its cause, and
+                     the fix that worked (append new errors there)
+
+Rule of thumb:
+  - notes / general text    -> notes.txt
+  - behavior / conventions  -> rules.txt
+  - failures / fixes        -> errors.txt
+
+================================================================================
+PROJECT OVERVIEW (fill in)
+================================================================================
+<Describe the project here: what it does, the stack, how to run and test it,
+and anything a new session must know.>
+
+================================================================================
+SESSION NOTE FORMAT
+================================================================================
+End each working session by appending a dated, titled note below. Format:
+
+  ================================================================================
+  SESSION NOTE (YYYY-MM-DD): TITLE
+  ================================================================================
+  WHAT HAPPENED  — what was done this session
+  CURRENT STATE  — where things stand (open items, tooling state)
+  NEXT-SESSION STARTER — the obvious next step
+  ================================================================================
+
+EXAMPLE SESSION NOTE:
+
+================================================================================
+SESSION NOTE (2026-08-08): EXAMPLE
+================================================================================
+WHAT HAPPENED
+- Installed the three-file system and the error-log tooling.
+- Logged the first two errors (webhook KeyError, resize timeouts) with
+  causes written BEFORE the fixes.
+
+CURRENT STATE
+- Error log: 3 entries / 0 errors / 0 warnings; 2 non-FIXED items.
+- Git gate installed (commit-msg hook).
+
+NEXT-SESSION STARTER
+- Run `python start.py` (STEP 0 health check included).
+- Commit convention: git commit -m "... (AREA: <what broke>)".
+- Obvious next work: the image resize timeout (OPEN).
+================================================================================

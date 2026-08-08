@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "./.github/hooks/block-no-verify-hook.sh"
+      }
+    ]
+  }
+}

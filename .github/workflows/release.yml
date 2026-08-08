@@ -1,0 +1,87 @@
+name: Release
+
+# Creates a git tag + draft GitHub Release whenever the version at the top of
+# CHANGELOG.md is bumped. The single source of truth for versions is
+# CHANGELOG.md — no package.json / setup.py to keep in sync.
+#
+# Flow: bump the version in CHANGELOG.md, push to main → this workflow tags it
+# (vX.Y.Z) and opens a DRAFT release with that changelog section as the body.
+# Drafts stay private until you edit + publish them on the Releases page, so a
+# stray push can never announce something by accident. Drafts are created even
+# if CI fails on that push — safe, because nothing is published automatically.
+#
+# Notes:
+# - Prerelease tags (0.2.0-rc.1) are NOT supported — the version must be a
+#   plain X.Y.Z semver.
+# - If a tag exists but its release was deleted, re-running will not recreate
+#   it (the tag check short-circuits); create it manually on the Releases page.
+#
+# If you fork this repo, add an owner guard to the job so forks don't tag
+# their own releases:
+#   if: github.repository_owner == '<your-org>'
+on:
+  push:
+    branches: [master, main]
+
+permissions:
+  contents: write # create tags and releases
+
+# Only one release run at a time: two rapid pushes bumping the version must
+# not race past the tag-exists check and both try to create the tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags, needed for the comparison
+          fetch-tags: true
+
+      # Version = first "## [X.Y.Z]" header that isn't [Unreleased].
+      # index()/substr() are used instead of regex so no escaping is needed.
+      - name: Extract version from CHANGELOG.md
+        id: version
+        run: |
+          ver=$(awk '/^## /{ line=$0; end=index(line, "]"); if (end > 4) { v=substr(line, 5, end - 5); if (v != "Unreleased") { print v; exit } } }' CHANGELOG.md)
+          if ! printf '%s' "$ver" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "no semver version found at the top of CHANGELOG.md (got: '$ver')" >&2
+            exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "Found version: $ver"
+
+      - name: Check whether the tag already exists
+        id: tagcheck
+        run: |
+          if git tag -l "v${{ steps.version.outputs.version }}" | grep -q .; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag v${{ steps.version.outputs.version }} already exists - nothing to do."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract changelog section for the release body
+        id: body
+        run: |
+          ver="${{ steps.version.outputs.version }}"
+          awk -v v="$ver" '
+            index($0, "## [" v "]") == 1 {found=1; next}
+            found && /^## / {exit}
+            found {print}
+          ' CHANGELOG.md > body.md
+          if [ ! -s body.md ]; then
+            echo "Released v$ver" > body.md
+          fi
+
+      - name: Create tag + draft release
+        if: steps.tagcheck.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          body_path: body.md
+          draft: true
