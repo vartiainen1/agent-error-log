@@ -59,7 +59,7 @@ agent-error-log/
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
-├── _test_errors.py         64 unit tests for the tooling
+├── _test_errors.py         81 unit tests for the tooling
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
 ├── hooks/                  optional harness-level --no-verify blockers
 ├── rules.txt               RULES template (how the agent behaves)
@@ -211,6 +211,8 @@ ready-to-use blockers for the common cases.
 | `--archive-days N` | preview FIXED entries older than N days |
 | `--archive-days N --apply` | actually move them into the ARCHIVED section (idempotent) |
 | `--log PATH` | point the tooling at any error log |
+| `--lessons` | distill recurring cause keywords from the error log into lessons (preview) |
+| `--lessons --apply` | write the distilled LESSONS section into `rules.txt` |
 
 ## Customization
 
@@ -222,7 +224,8 @@ ready-to-use blockers for the common cases.
 - **Lessons** — `rules.txt` §7 ships five generic root-cause lessons
   (data robustness, model quirks, environment, screen-vision, log
   discipline). Replace them with your own as your log grows — that section
-  is the permanent memory.
+  is the permanent memory. Regenerate it automatically from your error
+  log: `python check_errors.py --lessons --apply`.
 - **Python interpreter** — the hook uses `python` by default; override with
   the `PYTHON` env var.
 - **Hook placement** — the hook finds `check_errors.py` at the repo root by
@@ -253,7 +256,7 @@ ready-to-use blockers for the common cases.
 ## Development
 
 ```sh
-python _test_errors.py   # 64 tests: parsing, validation, gate, add, archive
+python _test_errors.py   # 81 tests: parsing, validation, gate, add, archive, lessons
 ```
 
 The tests build throwaway logs in temp dirs — they never touch your real

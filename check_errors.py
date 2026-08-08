@@ -12,6 +12,8 @@ script (or point --log at any error log):
     python check_errors.py --archive-days 30            preview FIXED entries
                                                         older than 30 days
     python check_errors.py --archive-days 30 --apply    actually move them
+    python check_errors.py --lessons                   preview distilled lessons
+    python check_errors.py --lessons --apply           write them into rules.txt
 
 Exit codes: 0 = ok / gate passed, 1 = validation errors or gate failed.
 """
@@ -19,6 +21,7 @@ Exit codes: 0 = ok / gate passed, 1 = validation errors or gate failed.
 import argparse
 import re
 import sys
+from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -36,6 +39,9 @@ FIELD_RE = re.compile(r"^  (?P<field>ERROR|CAUSE|FIX|STATUS):\s*(?P<value>.*)$")
 SEP_RE = re.compile(r"^={10,}$")
 ARCHIVE_TITLE = "ARCHIVED ENTRIES"
 SECTION5 = "5) TO ADD A NEW ENTRY"
+RULES = HERE / "rules.txt"          # rules file holding the LESSONS section
+LESSONS_HEADER = "LESSONS LEARNED"
+STOPWORDS = frozenset({"about","after","also","and","are","been","before","being","but","can","cause","causes","could","did","does","error","errors","even","every","first","fix","fixed","from","have","into","issue","issues","just","logged","make","more","most","must","other","over","same","should","some","still","such","than","that","their","them","then","there","these","they","this","those","through","under","used","using","very","was","were","what","when","where","which","while","will","with","without","would","your"})
 
 
 def load(path):
@@ -277,6 +283,110 @@ def cmd_archive(text, days, apply, log_path):
     return 0
 
 
+
+# --- Lessons distillation (--lessons) --------------------------------------
+
+def _tokens(text):
+    """Yield significant lowercase words (len>=4, not stopwords, no digits)."""
+    for w in re.split(r"[^A-Za-z0-9_']+", text.lower()):
+        w = w.strip("_'")
+        if len(w) >= 4 and w not in STOPWORDS and not any(c.isdigit() for c in w):
+            yield w
+
+
+def _entry_tokens(e):
+    """Tokens of an entry's AREA + ERROR + CAUSE (the text that explains WHY)."""
+    txt = " ".join([e["area"], e["fields"].get("ERROR", ""), e["fields"].get("CAUSE", "")])
+    return list(_tokens(txt))
+
+
+def cluster_entries(entries):
+    """Group entries into lessons by shared cause keywords (deterministic).
+
+    Each entry is represented by its 3 most frequent significant keywords;
+    entries sharing at least one keyword join the same cluster. Returns
+    (clusters, counts) where counts is the global keyword frequency map.
+    """
+    counts = Counter(t for e in entries for t in _entry_tokens(e))
+    clusters = []
+    for e in entries:
+        sig = sorted({t for t in _entry_tokens(e)}, key=lambda t: (-counts[t], t))[:3]
+        for c in clusters:
+            if set(sig) & c["keywords"]:
+                c["entries"].append(e)
+                c["keywords"] |= set(sig)
+                break
+        else:
+            clusters.append({"keywords": set(sig), "entries": [e]})
+    return clusters, counts
+
+
+def render_lessons(clusters, counts, total):
+    """Render the LESSONS section text from clusters (stdout + rules.txt)."""
+    lines = [
+        "Distilled from the error log by: python check_errors.py --lessons [--apply]",
+        f"Generated: {date.today():%Y-%m-%d}  |  source: {total} error log entrie(s).",
+        "",
+    ]
+    for n, c in enumerate(clusters, 1):
+        kws = c["keywords"] or {"(no keywords)"}
+        title = max(kws, key=lambda k: (counts.get(k, 0), k))
+        areas = "; ".join(e["area"] for e in c["entries"])
+        lines += [
+            f"{n}. {title}",
+            f"   {len(c['entries'])} entrie(s): {areas}",
+            f"   Common cause keywords: {', '.join(sorted(kws))}",
+            "   Action: re-read the CAUSE fields of these entries before touching",
+            "   related code, so the same mistake is not repeated.",
+            "",
+        ]
+    return "\n".join(lines).rstrip("\n") + "\n"
+
+
+def _patch_rules_lessons(rules_path, body):
+    """Replace the LESSONS section in rules.txt with body; append if absent.
+
+    The header is anchored to a real section title (a numbered section
+    line or exactly 'LESSONS LEARNED'), so a stray mention of the words in
+    the body is never mistaken for the section. Original line endings are
+    preserved (CRLF in, CRLF out).
+    """
+    raw = rules_path.read_bytes() if rules_path.exists() else b""
+    crlf = b"\r\n" in raw
+    text = raw.decode("utf-8", errors="replace")
+    bar = "=" * 80
+    lines = text.splitlines()
+    idx = next((i for i, l in enumerate(lines)
+                if LESSONS_HEADER in l
+                and (re.match(r"^\s*\d+\)", l) or l.strip() == LESSONS_HEADER)), None)
+    if idx is not None:
+        head = "\n".join(lines[: idx + 1])
+        out = head + "\n" + bar + "\n" + body
+    else:
+        block = f"{bar}\n{LESSONS_HEADER}\n{bar}\n{body}"
+        out = block if not text.strip() else text.rstrip("\r\n") + "\n\n" + block
+    return out.replace("\n", "\r\n") if crlf else out
+
+
+def cmd_lessons(text, rules_path, apply):
+    """Distill recurring causes into lessons; --apply writes rules.txt."""
+    entries = parse_entries(text)
+    if not entries:
+        print("No entries in the error log - nothing to distill.")
+        return 0
+    clusters, counts = cluster_entries(entries)
+    body = render_lessons(clusters, counts, len(entries))
+    print(body, end="")
+    print(f"{len(clusters)} lesson(s) distilled from {len(entries)} entrie(s).")
+    if not apply:
+        print("Dry run - nothing changed. Re-run with --apply to write this")
+        print("LESSONS section into the rules file (rules.txt).")
+        return 0
+    if not rules_path.exists():
+        print(f"WARN : rules file not found: {rules_path} (creating it)")
+    rules_path.write_bytes(_patch_rules_lessons(rules_path, body).encode("utf-8"))
+    print(f"LESSONS section written to: {rules_path}")
+    return 0
 def main():
     ap = argparse.ArgumentParser(
         description="Validate and maintain the error log (stdlib only). "
@@ -289,7 +399,14 @@ def main():
     ap.add_argument("--archive-days", type=int, metavar="N",
                     help="preview FIXED entries older than N days")
     ap.add_argument("--apply", action="store_true",
-                    help="with --archive-days: actually move them")
+                    help="with --archive-days: actually move them; with "
+                         "--lessons: write the LESSONS section into rules.txt")
+    ap.add_argument("--lessons", action="store_true",
+                    help="distill recurring cause keywords from the error log "
+                         "into lessons (preview; --apply writes rules.txt)")
+    ap.add_argument("--rules", metavar="PATH",
+                    help="rules file to update with --lessons --apply "
+                         "(default: rules.txt in this folder)")
     args = ap.parse_args()
 
     log_path = Path(args.log) if args.log else LOG
@@ -304,6 +421,9 @@ def main():
         return cmd_add(text, log_path)
     if args.archive_days is not None:
         return cmd_archive(text, args.archive_days, args.apply, log_path)
+    if args.lessons:
+        rules_path = Path(args.rules) if args.rules else RULES
+        return cmd_lessons(text, rules_path, args.apply)
     return cmd_check(text)
 
 

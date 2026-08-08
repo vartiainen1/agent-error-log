@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-08-09
 
 ### Added
 
@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI** — the hook syntax check now covers every hook script
   (`git-commitmsg-hook.sh` and `hooks/*.sh`).
 - **LICENSE** — copyright holder set.
+- **`check_errors.py --lessons`** — distills recurring CAUSE keywords
+  from the error log into a LESSONS LEARNED section (preview by default;
+  `--apply` writes it into `rules.txt`). The agent's memory now
+  compounds on its own.
 
 ## [0.1.0] - 2026-08-08
 

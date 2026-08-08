@@ -223,4 +223,117 @@ with mock.patch("check_errors.input", return_value=""):
     except SystemExit:
         t("ask rejects empty required", True)
 
+# --- lessons (--lessons) -----------------------------------------------------
+
+def lessons_log():
+    return (
+        BAR + "\n1) TEST\n" + BAR + "\n\n"
+        + "[2026-08-01] AREA: payment webhook parser\n"
+        + "  ERROR: KeyError: 'amount' on payloads without an amount field\n"
+        + "  CAUSE: the payload dict has no amount key; payload['amount'] raises\n"
+        + "  FIX: use payload.get('amount', 0) and guard None\n"
+        + "  STATUS: FIXED.\n\n"
+        + "[2026-08-02] AREA: CSV importer crash\n"
+        + "  ERROR: None.strip() on missing cells\n"
+        + "  CAUSE: csv.DictReader fills missing columns with None; code calls .strip()\n"
+        + "  FIX: (row.get('x') or '').strip()\n"
+        + "  STATUS: FIXED.\n\n"
+        + "[2026-08-03] AREA: search API rate limit\n"
+        + "  ERROR: HTTP 429 Too Many Requests on back-to-back queries\n"
+        + "  CAUSE: the API throttles rapid consecutive requests without gaps\n"
+        + "  FIX: exponential backoff + jitter; fallback backend\n"
+        + "  STATUS: MITIGATED.\n\n"
+        + BAR + "\n5) TO ADD A NEW ENTRY\n" + BAR + "\n"
+        + "  [YYYY-MM-DD] AREA: <what broke>\n"
+        + "    ERROR: <symptom>\n"
+        + "    STATUS: FIXED | PARTIAL | OPEN | MITIGATED | WORKAROUND\n"
+    )
+
+t("tokens drop stopwords and short words",
+  set(ce._tokens("the payload amount raises without xyz")) == {"payload", "amount", "raises"})
+
+cl, counts = ce.cluster_entries(ce.parse_entries(lessons_log()))
+t("lessons: 3 distinct clusters", len(cl) == 3)
+t("lessons: every entry clustered",
+  sum(len(c["entries"]) for c in cl) == 3)
+
+shared = (
+    "[2026-08-04] AREA: rate limit A\n"
+    + "  ERROR: 429 again\n"
+    + "  CAUSE: API throttles rapid requests\n"
+    + "  STATUS: OPEN.\n\n"
+    + "[2026-08-05] AREA: rate limit B\n"
+    + "  ERROR: 429 twice\n"
+    + "  CAUSE: gateway throttles the client\n"
+    + "  STATUS: OPEN.\n"
+)
+cl2, _ = ce.cluster_entries(ce.parse_entries(shared))
+t("lessons: shared keyword merges clusters",
+  len(cl2) == 1 and len(cl2[0]["entries"]) == 2)
+
+body = ce.render_lessons(cl, counts, 3)
+t("lessons: render mentions areas",
+  "payment webhook parser" in body and "search API rate limit" in body)
+t("lessons: render newline-terminated", body.endswith("\n"))
+
+d6, p6 = tmp_log(lessons_log())
+rp6 = Path(d6.name) / "rules.txt"
+rp6.write_text(
+    "OLD RULES\n7) LESSONS LEARNED FROM THE ERROR LOG\n========\nOLD BODY\n",
+    encoding="utf-8",
+)
+try:
+    t("lessons dry run returns 0",
+      quiet(ce.cmd_lessons, p6.read_text(encoding="utf-8"), rp6, False) == 0)
+    t("lessons dry run leaves rules", "OLD BODY" in rp6.read_text(encoding="utf-8"))
+    t("lessons apply returns 0",
+      quiet(ce.cmd_lessons, p6.read_text(encoding="utf-8"), rp6, True) == 0)
+    after6 = rp6.read_text(encoding="utf-8")
+    t("lessons apply replaces old body", "OLD BODY" not in after6)
+    t("lessons apply keeps the header",
+      "7) LESSONS LEARNED FROM THE ERROR LOG" in after6)
+    t("lessons apply writes distilled body",
+      "Distilled from the error log" in after6 and "payment webhook parser" in after6)
+    rp7 = Path(d6.name) / "rules2.txt"
+    rp7.write_text("JUST RULES\n", encoding="utf-8")
+    quiet(ce.cmd_lessons, p6.read_text(encoding="utf-8"), rp7, True)
+    t("lessons appends when no section",
+      "LESSONS LEARNED" in rp7.read_text(encoding="utf-8"))
+    d8, p8 = tmp_log(BAR + "\n5) TO ADD A NEW ENTRY\n" + BAR + "\n")
+    t("lessons empty log ok",
+      quiet(ce.cmd_lessons, p8.read_text(encoding="utf-8"), rp6, True) == 0)
+    d8.cleanup()
+    nk, pnk = tmp_log(
+        "[2026-08-06] AREA: the was\n"
+        + "  ERROR: that was then\n"
+        + "  CAUSE: when was the\n"
+        + "  FIX: n/a\n"
+        + "  STATUS: OPEN.\n"
+    )
+    t("lessons no-keyword entry handled",
+      quiet(ce.cmd_lessons, pnk.read_text(encoding="utf-8"), rp6, True) == 0)
+    t("lessons no-keyword renders safely",
+      "(no keywords)" in rp6.read_text(encoding="utf-8"))
+    nk.cleanup()
+    rp9 = Path(d6.name) / "rules3.txt"
+    rp9.write_bytes(b"OLD RULES\r\n7) LESSONS LEARNED FROM THE ERROR LOG\r\n====\r\nOLD\r\n")
+    quiet(ce.cmd_lessons, p6.read_text(encoding="utf-8"), rp9, True)
+    t("lessons preserves CRLF endings",
+      b"\r\n" in rp9.read_bytes())
+    rpa = Path(d6.name) / "rules_crlf_append.txt"
+    rpa.write_bytes(b"JUST RULES\r\n")
+    quiet(ce.cmd_lessons, p6.read_text(encoding="utf-8"), rpa, True)
+    rab = rpa.read_bytes()
+    t("lessons CRLF append has no stray CR",
+      b"\r\r" not in rab and b"LESSONS LEARNED" in rab)
+    rpb = Path(d6.name) / "rules_renumbered.txt"
+    rpb.write_bytes(b"OLD RULES\n8) LESSONS LEARNED FROM THE ERROR LOG\n====\nOLD BODY\n")
+    quiet(ce.cmd_lessons, p6.read_text(encoding="utf-8"), rpb, True)
+    afterb = rpb.read_text(encoding="utf-8")
+    t("lessons renumbered header replaced not duplicated",
+      afterb.count("LESSONS LEARNED FROM THE ERROR LOG") == 1 and "OLD BODY" not in afterb)
+    d8.cleanup()
+finally:
+    d6.cleanup()
+
 print(f"\nAll {PASS} tests passed.")
