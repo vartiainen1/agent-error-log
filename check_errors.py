@@ -14,6 +14,8 @@ script (or point --log at any error log):
     python check_errors.py --archive-days 30 --apply    actually move them
     python check_errors.py --lessons                   preview distilled lessons
     python check_errors.py --lessons --apply           write them into rules.txt
+    python check_errors.py --check-commit msg.txt      gate on a commit message
+                                                       (server-side CI backstop)
 
 Exit codes: 0 = ok / gate passed, 1 = validation errors or gate failed.
 """
@@ -387,6 +389,46 @@ def cmd_lessons(text, rules_path, apply):
     rules_path.write_bytes(_patch_rules_lessons(rules_path, body).encode("utf-8"))
     print(f"LESSONS section written to: {rules_path}")
     return 0
+def _extract_area(msg):
+    """Pull the last AREA:/LOG: marker value from a commit message, or None."""
+    for line in msg.splitlines():
+        marks = list(re.finditer(r"(?:AREA|LOG)\s*:", line, re.IGNORECASE))
+        if not marks:
+            continue
+        area = line[marks[-1].end():]
+        area = re.sub(r"[),.;:]+\s*$", "", area)
+        return re.sub(r"\s+", " ", area).strip()
+    return None
+
+
+def cmd_check_commit(text, msg_path):
+    """Gate on a commit message file: exit 0 only if it names a logged error.
+
+    Mirrors the commit-msg hook's core rule so CI can re-run it server-side,
+    where --no-verify cannot reach. The message must carry an 'AREA:' (or
+    'LOG:') marker naming an error that is already logged.
+    """
+    if not msg_path.exists():
+        print(f"commit-gate: message file not found: {msg_path}")
+        return 1
+    area = _extract_area(load(msg_path))
+    if not area:
+        print("commit-gate BLOCKED: no 'AREA:' marker in the commit message.")
+        print("  Log the error first:  python check_errors.py --add")
+        print('  Then commit with:     git commit -m "... (AREA: <what broke>)"')
+        return 1
+    # Mirrors cmd_has_entry / the hook's --has-entry search -- keep in sync.
+    needle = area.lower()
+    found = [e for e in parse_entries(text)
+             if needle in (e["area"] + " " + e["tag"]).lower()]
+    if found:
+        print(f'commit-gate OK: "{area}" is logged — fix may land.')
+        return 0
+    print(f'commit-gate BLOCKED: "{area}" is NOT logged in the error log.')
+    print("  LOG BEFORE FIXING: add an entry first (python check_errors.py --add),")
+    print("  then commit again.")
+    return 1
+
 def main():
     ap = argparse.ArgumentParser(
         description="Validate and maintain the error log (stdlib only). "
@@ -407,6 +449,9 @@ def main():
     ap.add_argument("--rules", metavar="PATH",
                     help="rules file to update with --lessons --apply "
                          "(default: rules.txt in this folder)")
+    ap.add_argument("--check-commit", metavar="FILE",
+                    help="gate: exit 0 only if the commit message in FILE "
+                         "names a logged error (AREA:/LOG: marker)")
     args = ap.parse_args()
 
     log_path = Path(args.log) if args.log else LOG
@@ -424,6 +469,8 @@ def main():
     if args.lessons:
         rules_path = Path(args.rules) if args.rules else RULES
         return cmd_lessons(text, rules_path, args.apply)
+    if args.check_commit:
+        return cmd_check_commit(text, Path(args.check_commit))
     return cmd_check(text)
 
 

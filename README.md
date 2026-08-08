@@ -59,7 +59,7 @@ agent-error-log/
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
-├── _test_errors.py         81 unit tests for the tooling
+├── _test_errors.py         90 unit tests for the tooling
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
 ├── hooks/                  optional harness-level --no-verify blockers
 ├── rules.txt               RULES template (how the agent behaves)
@@ -183,9 +183,10 @@ ready-to-use blockers for the common cases.
    blocks you, log the error first and commit again.* LLM agents follow
    explicit instructions reliably — this closes the loop for the common
    case.
-2. **CI as a backstop** — run `python check_errors.py` in your CI pipeline.
-   Even a bypassed hook can't hide a broken log: the check fails the build,
-   and branch protection can require it before merge.
+2. **CI as a backstop (shipped)** — the `commit-gate` job re-runs the gate
+   on every pushed commit: `python check_errors.py --check-commit` fails the
+   build if the commit message names no logged error, and the `tests + linter`
+   matrix catches a broken log. Both can be required before merge.
 3. **Harness-level blocking (shipped in `hooks/`)** — block the flag where
    the agent runs:
    - `hooks/block-no-verify.sh` — a git alias wrapper for your own shell
@@ -201,6 +202,20 @@ ready-to-use blockers for the common cases.
    (Gitea/GitLab) run on the server and cannot be skipped by the client.
    Overkill for a solo project, but the only truly unbypassable option.
 
+### Making the gate required (branch protection)
+
+The CI checks report failures but don't block pushes by default (a red check
+on `master` is advisory for the owner). To make the gate a hard requirement:
+
+1. GitHub → **Settings → Branches → Add branch protection rule**.
+2. Branch name pattern: `master` (or `main`).
+3. Tick **Require status checks to pass before merging**.
+4. Tick the checks: `commit-message gate (log-before-fix)` and `CI`.
+5. (Optional) tick **Do not allow bypassing the above settings** for admins.
+
+With that, a `--no-verify` commit cannot land on `master` — the message is
+re-checked on the server, where the flag does not exist.
+
 ## Tooling reference
 
 | Command | What it does |
@@ -213,6 +228,7 @@ ready-to-use blockers for the common cases.
 | `--log PATH` | point the tooling at any error log |
 | `--lessons` | distill recurring cause keywords from the error log into lessons (preview) |
 | `--lessons --apply` | write the distilled LESSONS section into `rules.txt` |
+| `--check-commit FILE` | gate on a commit-message file: exit 0 only if it names a logged error (`AREA:`/`LOG:` marker) — the CI server-side backstop |
 
 ## Customization
 
@@ -256,7 +272,7 @@ ready-to-use blockers for the common cases.
 ## Development
 
 ```sh
-python _test_errors.py   # 81 tests: parsing, validation, gate, add, archive, lessons
+python _test_errors.py   # 90 tests: parsing, validation, gate, add, archive, lessons
 ```
 
 The tests build throwaway logs in temp dirs — they never touch your real

@@ -46,6 +46,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added exponential backoff + jitter; fallback backend as safety net
   STATUS: MITIGATED.
 
+[2026-08-09] AREA: CI commit-message gate missing
+  ERROR: --no-verify commits slip past the local gate unnoticed
+  CAUSE: the CI backstop linted the log but never re-checked the commit message
+  FIX: check_errors.py --check-commit + a commit-gate CI job re-run the gate on every push
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================

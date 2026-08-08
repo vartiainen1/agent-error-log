@@ -334,6 +334,36 @@ try:
       afterb.count("LESSONS LEARNED FROM THE ERROR LOG") == 1 and "OLD BODY" not in afterb)
     d8.cleanup()
 finally:
-    d6.cleanup()
+    d6.cleanup()# --- commit-message gate (--check-commit) -----------------------------------
+
+
+def t_checkcommit(tmp, text, msg):
+    p = Path(tmp) / "msg.txt"
+    p.write_text(msg, encoding="utf-8")
+    return quiet(ce.cmd_check_commit, text, p)
+
+
+d9, p9 = tmp_log(lessons_log())
+t("check-commit: no marker blocked",
+  t_checkcommit(d9.name, p9.read_text(encoding="utf-8"), "fix stuff\n") == 1)
+t("check-commit: logged AREA passes",
+  t_checkcommit(d9.name, p9.read_text(encoding="utf-8"),
+                "fix webhook (AREA: payment webhook parser)\n") == 0)
+t("check-commit: unlogged AREA blocked",
+  t_checkcommit(d9.name, p9.read_text(encoding="utf-8"),
+                "fix (AREA: never logged thing)\n") == 1)
+t("check-commit: LOG: alt marker passes",
+  t_checkcommit(d9.name, p9.read_text(encoding="utf-8"),
+                "fix importer (LOG: CSV importer crash)\n") == 0)
+t("check-commit: case-insensitive AREA passes",
+  t_checkcommit(d9.name, p9.read_text(encoding="utf-8"),
+                "fix (area: SEARCH API RATE LIMIT)\n") == 0)
+t("check-commit: missing msg file blocked",
+  quiet(ce.cmd_check_commit, p9.read_text(encoding="utf-8"),
+        Path(d9.name) / "nope.txt") == 1)
+t("check-commit: internal spaces collapsed like the hook",
+  t_checkcommit(d9.name, p9.read_text(encoding="utf-8"),
+                "fix (AREA:  payment   webhook parser)\n") == 0)
+d9.cleanup()
 
 print(f"\nAll {PASS} tests passed.")

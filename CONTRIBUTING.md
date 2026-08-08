@@ -10,7 +10,7 @@ project — please keep it that way.
   macOS, and Linux.
 - **Small changes** — prefer minimal diffs; no gold-plating.
 - **Tested** — every change to `check_errors.py` or `start.py` must keep
-  `python _test_errors.py` green (81 tests) and the linter clean
+  `python _test_errors.py` green (90 tests) and the linter clean
   (`python check_errors.py`).
 
 ## Reporting bugs
