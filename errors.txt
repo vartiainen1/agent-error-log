@@ -130,6 +130,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added a bullet noting the CI backstop re-runs check_errors.py --check-commit on every push to master
   STATUS: FIXED.
 
+[2026-08-09] AREA: README test-count drift guard missing
+  ERROR: the README's stated test count can drift from the real suite without anyone noticing - it has happened twice across the pair (90 vs 117; no count at all)
+  CAUSE: nothing re-checks the stated count at merge time
+  FIX: added _check_readme_count.py + a CI job that fails any push/PR where the README count differs from the suite
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
