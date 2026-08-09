@@ -142,6 +142,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: align _extract_area to the FIRST marker in both repos
   STATUS: OPEN.
 
+[2026-08-09] AREA: badge count artifact in live-page verification
+  ERROR: live-page verification reported "6 badges" for the agent-decision-log README; the real count is 8
+  CAUSE: the extraction regex only matched img.shields.io URLs, missing the actions badge and the laobi.icu visitor badge
+  FIX: recounted via full markdown-image extraction; both repos show 8/8 badges, all 16 endpoints HTTP 200
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
