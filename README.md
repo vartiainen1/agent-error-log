@@ -325,6 +325,15 @@ of truth. Bump it and push to `main`: the release workflow
 GitHub Release with that changelog section as the body — publish it on the
 Releases page when ready.
 
+## Companion tool
+
+- [**agent-decision-log**](https://github.com/vartiainen1/agent-decision-log) -
+  logs what your agent chose and why, so the next session starts from
+  *"we already decided X"* instead of re-exploring it. Proactive memory.
+
+Two tools, same shape, same lifecycle verbs: this one prevents repeating
+failures, the companion prevents repeating exploration.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
