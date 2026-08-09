@@ -68,8 +68,9 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   ERROR: README Quick start said "all 64 should pass" (then 90) while the real
          suite grew; a review quoted the stale "90 unit tests" from the README
   CAUSE: file-listing / quick-start lines never updated when tests were added
-  FIX: corrected to 64->90 (2026-08-09) and again 90->117 after --init added
-       27 tests; a sweep now finds no stale counts anywhere in the repo
+  FIX: corrected 64->90 (2026-08-09), then 90->117 after --init added 27 tests;
+       first sweep missed two more lines (quick-start + dev section), fixed
+       in a follow-up; an expanded sweep now finds zero stale counts
   STATUS: FIXED.
 
 [2026-08-09] AREA: README missing PR-workflow docs
