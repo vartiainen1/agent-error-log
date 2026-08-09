@@ -53,8 +53,8 @@ STOPWORDS = frozenset({"about","after","also","and","are","been","before","being
 
 
 def load(path):
-    """Read a text file with UTF-8 fallback."""
-    return path.read_text(encoding="utf-8", errors="replace")
+    """Read a text file with UTF-8 fallback (BOM-safe)."""
+    return path.read_text(encoding="utf-8-sig", errors="replace")
 
 
 def parse_entries(text):
@@ -95,7 +95,7 @@ def status_token(status):
     """First word of a STATUS value, punctuation stripped ('FIXED.' -> 'FIXED')."""
     if not status:
         return ""
-    return re.split(r"\s", status.strip())[0].rstrip(".,;—-")
+    return re.split(r"\s", status.strip())[0].rstrip(".,;—–-")
 
 
 def find_section5(text):
@@ -396,7 +396,13 @@ def cmd_lessons(text, rules_path, apply):
     print(f"LESSONS section written to: {rules_path}")
     return 0
 def _extract_area(msg):
-    """Pull the last AREA:/LOG: marker value from a commit message, or None."""
+    """Marker value from a commit message, or None.
+
+    Matches the shell hooks exactly: the first line that carries an
+    AREA:/LOG: marker, then the LAST marker on that line (the hooks use
+    'grep -m1' for the line and a greedy 'sed s/^.*(AREA|LOG):' for the
+    marker). The CI gate and the local hook therefore gate on the same text.
+    """
     for line in msg.splitlines():
         marks = list(re.finditer(r"(?:AREA|LOG)\s*:", line, re.IGNORECASE))
         if not marks:

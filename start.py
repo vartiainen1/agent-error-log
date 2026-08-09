@@ -14,7 +14,6 @@ Prints, from the folder holding this script:
 Stdlib only.
 """
 
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -49,18 +48,19 @@ def load(name):
 
 
 def active_errors(text):
-    """Return [(header, status)] for error-log entries not marked FIXED."""
+    """Return [(header, status)] for error-log entries not marked FIXED.
+
+    Delegates to check_errors.parse_entries() - the canonical parser - so
+    start.py can never drift from the entry format the tool validates.
+    """
+    if check_errors is None:
+        return None
     out = []
-    for block in re.split(r"(?m)^(?=\[[^\]]+\] AREA:)", text):
-        header = re.match(r"(\[[^\]]+\] AREA: [^\n]+)", block)
-        if not header:
+    for e in check_errors.parse_entries(text):
+        status = e["fields"].get("STATUS", "?").strip()
+        if check_errors.status_token(status).upper() == "FIXED":
             continue
-        body = block[header.end():]
-        m = re.search(r"STATUS:\s*([^\n]+)", body)
-        status = m.group(1).strip() if m else "?"
-        if re.match(r"FIXED\b", status, re.IGNORECASE):
-            continue
-        out.append((header.group(1).strip(), status))
+        out.append((f"[{e['tag']}] AREA: {e['area']}", status))
     return out
 
 
@@ -129,11 +129,14 @@ def main():
         print(f"  (missing file: {HERE / ERRORS_FILE})")
     else:
         aes = active_errors(errors)
-        if not aes:
+        if aes is None:
+            print("  (skipped - check_errors.py not found)")
+        elif not aes:
             print("  (none - the error log is clean, no unresolved items)")
-        for header, status in aes:
-            print(f"  {header}")
-            print(f"      STATUS: {status}")
+        else:
+            for header, status in aes:
+                print(f"  {header}")
+                print(f"      STATUS: {status}")
 
     print(f"\n{SUB}")
     print(f"LATEST SESSION NOTE (from {NOTES_FILE}):")

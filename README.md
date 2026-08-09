@@ -68,7 +68,7 @@ agent-error-log/
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
-├── _test_errors.py         117 unit tests for the tooling
+├── _test_errors.py         125 unit tests for the tooling
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
 ├── hooks/                  optional harness-level --no-verify blockers
 ├── rules.txt               RULES template (how the agent behaves)
@@ -93,7 +93,7 @@ Works on Windows / macOS / Linux.
 3. **Run it:**
    ```sh
    python start.py        # boots the session: health check + open errors + notes
-   python _test_errors.py # sanity-check the tooling (all 117 should pass)
+   python _test_errors.py # sanity-check the tooling (all 125 should pass)
    ```
 
 ### Adopting with a custom agent (no AGENTS.md support)
@@ -277,10 +277,16 @@ lands, so the squash title is exactly what gets re-checked on `master`.
   discipline). Replace them with your own as your log grows — that section
   is the permanent memory. Regenerate it automatically from your error
   log: `python check_errors.py --lessons --apply`.
+- **Lesson clusters** — lessons group by shared keywords, so two entries that
+  merely share a word can chain into one cluster. Good enough to group
+  related failures, not a perfect taxonomy — inspect before `--apply`.
 - **Python interpreter** — the hook uses `python` by default; override with
   the `PYTHON` env var.
 - **Hook placement** — the hook finds `check_errors.py` at the repo root by
   default; override with `AGENT_ERROR_LOG_DIR` (see *Git gate placement*).
+- **Log path** — `LOGNAME` defaults to `errors.txt` at the repo root. If the
+  log lives in a subfolder, set it to the repo-root-relative path (e.g.
+  `LOGNAME=docs/errors.txt`) — the hook matches staged paths verbatim.
 
 ## Compatibility & security
 
@@ -307,11 +313,15 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 ## Development
 
 ```sh
-python _test_errors.py   # 117 tests: parsing, validation, gate, add, archive, lessons, init
+python _test_errors.py   # 125 tests: parsing, validation, gate, add, archive, lessons, init
 ```
 
 The tests build throwaway logs in temp dirs — they never touch your real
 `errors.txt`.
+
+Parsing walks each entry forward to the next header, so worst case is O(n²)
+on pathological files; for real logs (tens to hundreds of entries) it is
+instant, and the validator is fine at thousands of lines.
 
 **CI** — a GitHub Actions workflow (`.github/workflows/ci.yml`) runs the unit
 tests, the linter, and a syntax check of every hook script (`git-commitmsg-hook.sh`

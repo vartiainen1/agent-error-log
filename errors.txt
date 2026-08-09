@@ -136,6 +136,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added _check_readme_count.py + a CI job that fails any push/PR where the README count differs from the suite
   STATUS: FIXED.
 
+[2026-08-09] AREA: _extract_area marker mismatch with hooks (review)
+  ERROR: review: Python takes the LAST AREA:/LOG: marker, the shell hooks take the FIRST
+  CAUSE: _extract_area uses finditer + marks[-1]; MINIMAL_HOOK and git-commitmsg-hook.sh use grep -m1
+  FIX: align _extract_area to the FIRST marker in both repos
+  STATUS: OPEN.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
