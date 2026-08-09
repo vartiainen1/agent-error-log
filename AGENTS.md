@@ -45,6 +45,10 @@ git commit -m "fix <thing> (AREA: <what broke>)"
 - Never use `git commit --no-verify` — it skips every hook, including this
   gate. If the hook blocks you, the error isn't logged; log it first, then
   commit again.
+- **CI re-enforces the gate server-side** — the workflow re-runs
+  `check_errors.py --check-commit` on every push to master. A `--no-verify`
+  commit can pass locally, but it can never land on master without naming a
+  logged error — CI is the backstop that cannot be skipped.
 - If your harness supports agent hooks (Claude Code, VS Code), install the
   blockers in `hooks/` (see `hooks/README.md`) so `--no-verify` is rejected
   at the tool-call layer too, not just by instruction.

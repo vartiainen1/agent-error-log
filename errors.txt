@@ -124,6 +124,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added a companion badge to the badge row linking agent-decision-log
   STATUS: FIXED.
 
+[2026-08-09] AREA: AGENTS.md missing CI gate note
+  ERROR: AGENTS.md does not mention that CI re-enforces the AREA gate on master - a --no-verify commit looks like a permanent bypass
+  CAUSE: the Committing section documents the local hook and harness blockers but predates the CI commit-gate job
+  FIX: added a bullet noting the CI backstop re-runs check_errors.py --check-commit on every push to master
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
