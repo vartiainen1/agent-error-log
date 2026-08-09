@@ -161,6 +161,12 @@ cp git-commitmsg-hook.sh .git/hooks/commit-msg
 chmod +x .git/hooks/commit-msg
 ```
 
+Or do it all in one command — templates, hook, health check, self-test:
+
+```sh
+python check_errors.py --init
+```
+
 **Git gate placement** — the hook assumes `check_errors.py` sits at the **repo
 root**. If you placed the folder elsewhere, tell the hook where:
 
@@ -255,6 +261,7 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 | `--lessons` | distill recurring cause keywords from the error log into lessons (preview) |
 | `--lessons --apply` | write the distilled LESSONS section into `rules.txt` |
 | `--check-commit FILE` | gate on a commit-message file: exit 0 only if it names a logged error (`AREA:`/`LOG:` marker) — the CI server-side backstop |
+| `--init` | one-command adoption: scaffold `errors.txt`/`rules.txt`/`notes.txt`, install the commit-msg hook, health-check, run the tests (`--target DIR`, `--no-tests`) |
 
 ## Customization
 

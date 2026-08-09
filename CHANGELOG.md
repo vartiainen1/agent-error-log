@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **One-command adoption** — `check_errors.py --init [--target DIR]`
+  scaffolds `errors.txt` / `rules.txt` / `notes.txt` (never overwriting
+  existing files), installs the `commit-msg` gate (backup-safe),
+  health-checks the log, and runs the unit-test suite. Built-in
+  minimal scaffolds kick in when only `check_errors.py` was copied.
+
 ## [0.4.0] - 2026-08-09
 
 ### Docs

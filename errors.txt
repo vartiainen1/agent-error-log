@@ -76,6 +76,13 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added a "Shipping a change (PR workflow)" section to the README
   STATUS: FIXED.
 
+[2026-08-09] AREA: one-command --init adoption missing
+  ERROR: adopting the system meant hand-copying templates and the git hook
+  CAUSE: no one-command setup existed in check_errors.py
+  FIX: check_errors.py --init scaffolds errors/rules/notes, installs the
+       commit-msg hook, health-checks the log, and runs the unit tests
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
