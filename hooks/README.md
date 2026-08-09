@@ -5,6 +5,20 @@ hook, including the log-before-fix gate. The files in this folder make that
 bypass deliberate instead of silent, at the layer where your agent actually
 lives.
 
+## Quick start (one command)
+
+```sh
+./hooks/install.sh            # install every blocker (git hook + alias + Claude Code + VS Code)
+./hooks/install.sh --status   # report what is installed
+./hooks/install.sh --help     # flags: --git --alias --claude --vscode
+```
+
+Idempotent and backup-safe: safe to re-run, nothing is duplicated, and
+`.claude/settings.json` is backed up before merging. The `--alias` step
+installs to `~/.local/bin` (or `$XDG_BIN_HOME`) and appends the git alias to
+your shell rc — add that bin dir to your `PATH` if it isn't already, then
+re-source the rc.
+
 Three layers, from least to most invasive:
 
 | Layer | File | Blocks |

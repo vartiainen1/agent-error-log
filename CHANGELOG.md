@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   re-runs the log-before-fix rule on a commit-message file, and the new
   `commit-gate` CI job applies it to every pushed commit — so a
   `--no-verify` bypass is caught at the server, where the flag cannot reach.
+- **`hooks/install.sh`** — one-command setup for every `--no-verify` blocker
+  (commit-msg gate, git wrapper alias, Claude Code + VS Code hooks).
+  Idempotent; backs up files before changing them; self-tests the Python
+  interpreter (Windows Store stubs are detected and skipped).
 
 ## [0.2.0] - 2026-08-09
 

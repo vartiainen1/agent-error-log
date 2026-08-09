@@ -52,6 +52,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: check_errors.py --check-commit + a commit-gate CI job re-run the gate on every push
   STATUS: FIXED.
 
+[2026-08-09] AREA: harness blocker install friction
+  ERROR: enabling the --no-verify blockers meant hand-editing shell rc files, settings.json and hooks
+  CAUSE: no single installer existed for the four enforcement layers
+  FIX: hooks/install.sh - one command installs all of them, idempotently
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
