@@ -66,7 +66,7 @@ agent-error-log/
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
-├── _test_errors.py         90 unit tests for the tooling
+├── _test_errors.py         117 unit tests for the tooling
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
 ├── hooks/                  optional harness-level --no-verify blockers
 ├── rules.txt               RULES template (how the agent behaves)
