@@ -109,49 +109,35 @@ Delete this section if you have none.>
 ================================================================================
 7) LESSONS LEARNED FROM THE ERROR LOG
 ================================================================================
-Distilled root causes from errors.txt (see that log for the full
-symptom -> cause -> fix per entry). Re-read these before coding — they are
-WHY past errors happened, and what to avoid repeating.
+Distilled from the error log by: python check_errors.py --lessons [--apply]
+Generated: 2026-08-09  |  source: 19 error log entrie(s).
 
-The five starter lessons below are generic root-cause patterns worth keeping.
-Replace them with YOUR OWN causes as your log grows.
+1. amount
+   1 entrie(s): payment webhook parser
+   Common cause keywords: amount, payload, webhook
+   Action: re-read the CAUSE fields of these entries before touching
+   related code, so the same mistake is not repeated.
 
-1. DATA ROBUSTNESS
-   - Missing dict keys -> KeyError; csv.DictReader fills missing columns
-     with None -> None.strip() crashes.
-   - Use row.get('amount', 0) / (row.get(...) or '').strip(); check a key
-     exists and is not None before operating on any value.
+2. resize
+   1 entrie(s): image resize service timeouts
+   Common cause keywords: full, image, resize
+   Action: re-read the CAUSE fields of these entries before touching
+   related code, so the same mistake is not repeated.
 
-2. LLM MODEL QUIRKS (your provider/model)
-   - Baked-in system-prompt / template guidance can be INERT (byte-identical
-     output) — verify, don't assume.
-   - Verbose tool descriptions and system messages that name tools push the
-     model into XML/prose instead of JSON tool calls; it may hallucinate
-     tool names and malformed arguments.
-   - Fix behavior in the prompt itself; keep tool definitions short and
-     factual; keep the system prompt generic; handle multiple output styles
-     with retries.
+3. back
+   1 entrie(s): search API rate limit
+   Common cause keywords: back, gaps, requests
+   Action: re-read the CAUSE fields of these entries before touching
+   related code, so the same mistake is not repeated.
 
-3. ENVIRONMENT / RELIABILITY
-   - Search engines and APIs throttle back-to-back queries; keep gaps and
-     fallbacks.
-   - Wrong Python (venv missing a package) breaks scripts; PATH order can
-     pick the wrong interpreter — call the right one explicitly.
-   - Derived models / built artifacts may not exist; keep automatic
-     fallbacks with readable messages.
+4. readme
+   15 entrie(s): CI commit-message gate missing; README CI badges missing; README stale test count; README missing PR-workflow docs; one-command --init adoption missing; community polish missing; code of conduct missing; permanent visitor counter missing; README companion cross-link; README companion badge; AGENTS.md missing CI gate note; README test-count drift guard missing; _extract_area marker mismatch with hooks (review); badge count artifact in live-page verification; rules.txt missing LESSONS section
+   Common cause keywords: added, area, badge, command, community, companion, count, enabling, gate, hook, hooks, missing, never, polish, readme, section
+   Action: re-read the CAUSE fields of these entries before touching
+   related code, so the same mistake is not repeated.
 
-4. SCREEN-VISION (GAME / UI AUTOMATION)
-   - Saved sprite colors drift from the live sprite; trackers glue to UI
-     blobs — rediscover colors during verified live runs; reject oversized
-     and edge (UI) blobs.
-   - OCR misreads fake on-screen clocks — require additional signals
-     (e.g. motion) and sanity clamps.
-   - Modal screens ignore Enter/Space cycling — press explicit keys.
-   - Repeated identical actions loop forever — fingerprint actions and
-     break after N repeats.
-
-5. LOG / TEMPLATE DISCIPLINE
-   - Unenforced entries drift (ERROR v1:, FIX (works):, missing CAUSE) and
-     become unparseable — use check_errors.py (--add / --has-entry /
-     validate) so the log stays machine-readable.
-================================================================================
+5. verify
+   1 entrie(s): harness blocker install friction
+   Common cause keywords: blockers, hooks, verify
+   Action: re-read the CAUSE fields of these entries before touching
+   related code, so the same mistake is not repeated.
