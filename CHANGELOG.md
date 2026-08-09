@@ -7,10 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `_extract_area()` marker semantics documented and pinned by tests:
+  the CI gate and the shell hooks agree on the marker (first matching
+  line, last `AREA:`/`LOG:` on it — the hooks' `grep -m1` + greedy `sed`).
+- `status_token()` strips the en-dash as well as the em-dash (`OPEN–` ->
+  `OPEN`).
+- `start.py` `active_errors()` delegates to `check_errors.parse_entries()`
+  (the canonical parser) instead of re-implementing entry splitting, so
+  the boot briefing can never drift from the tool's format.
+- `load()` reads with `utf-8-sig` so a BOM-prefixed log is parsed, not
+  silently ignored.
+
+### Added
+
+- Robustness tests: 100-entry fuzz, BOM / invalid UTF-8, en-dash
+  statuses, an empty section-5-only log, and multi-marker precedence in
+  `--check-commit` (last marker on the first matching line).
+
 ### Docs
 
 - Add a permanent visitor badge to the README (GitHub traffic stats
   only keep 14 days).
+- README: document the lessons-clustering chain limitation, the parser's
+  worst-case O(n²) on pathological logs, and `LOGNAME` repo-root-relative
+  paths.
 
 ## [0.7.0] - 2026-08-09
 

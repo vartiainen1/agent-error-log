@@ -2,6 +2,7 @@
 Run: python _test_errors.py"""
 
 import io
+import random
 import sys
 import tempfile
 from datetime import date, timedelta
@@ -487,5 +488,48 @@ try:
         t("init skips the selftest when disabled", mr2.call_count == 0)
 finally:
     dN.cleanup()
+
+# --- review-driven robustness: fuzz + edge cases ----------------------------
+random.seed(7)
+fuzz_parts = []
+for i in range(100):
+    d = (date(2020, 1, 1) + timedelta(days=i * 3)).isoformat()
+    fuzz_parts.append(entry(d, f"area {i}",
+                            random.choice(["OPEN", "FIXED", "MITIGATED", "WORKAROUND", "PARTIAL"])))
+t("fuzz: 100 random entries validate clean",
+  quiet(ce.cmd_check, "\n\n".join(fuzz_parts)) == 0)
+
+dU = tempfile.TemporaryDirectory()
+try:
+    pU = Path(dU.name) / "errors.txt"
+    pU.write_bytes(b"\xef\xbb\xbf" + entry("2026-08-09", "bom file", "OPEN").encode("utf-8"))
+    t("BOM-prefixed log parses", len(ce.parse_entries(ce.load(pU))) == 1)
+    pU2 = Path(dU.name) / "bad.txt"
+    pU2.write_bytes(b"[2026-08-09] AREA: \xff\xfe broken\n"
+                    b"  ERROR: x\n  CAUSE: y\n  FIX: z\n  STATUS: OPEN.\n")
+    t("invalid UTF-8 bytes never crash the parser",
+      len(ce.parse_entries(ce.load(pU2))) == 1)
+    t("invalid UTF-8 bytes never crash cmd_check",
+      quiet(ce.cmd_check, ce.load(pU2)) == 0)
+finally:
+    dU.cleanup()
+
+t("status_token strips en-dash too", ce.status_token("OPEN\u2013").upper() == "OPEN")
+
+only5 = BAR + "\n5) TO ADD A NEW ENTRY\n" + BAR + "\n"
+t("file with only section 5 validates clean", quiet(ce.cmd_check, only5) == 0)
+
+d9b, p9b = tmp_log(lessons_log())
+try:
+    # the gate and the hooks both take the LAST marker on the first
+    # matching line (hooks: grep -m1 + greedy sed) - tests pin the sync.
+    t("check-commit: last marker wins, matching the hooks (unlogged LOG later)",
+      t_checkcommit(d9b.name, p9b.read_text(encoding="utf-8"),
+                    "fix webhook (AREA: payment webhook parser) - see also LOG: never logged thing\n") == 1)
+    t("check-commit: last marker wins, matching the hooks (logged LOG later)",
+      t_checkcommit(d9b.name, p9b.read_text(encoding="utf-8"),
+                    "fix (AREA: never logged thing) - and LOG: payment webhook parser\n") == 0)
+finally:
+    d9b.cleanup()
 
 print(f"\nAll {PASS} tests passed.")
