@@ -91,7 +91,7 @@ Works on Windows / macOS / Linux.
 3. **Run it:**
    ```sh
    python start.py        # boots the session: health check + open errors + notes
-   python _test_errors.py # sanity-check the tooling (all 90 should pass)
+   python _test_errors.py # sanity-check the tooling (all 117 should pass)
    ```
 
 ### Adopting with a custom agent (no AGENTS.md support)
@@ -305,7 +305,7 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 ## Development
 
 ```sh
-python _test_errors.py   # 90 tests: parsing, validation, gate, add, archive, lessons
+python _test_errors.py   # 117 tests: parsing, validation, gate, add, archive, lessons, init
 ```
 
 The tests build throwaway logs in temp dirs — they never touch your real
