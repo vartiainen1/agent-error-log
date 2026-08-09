@@ -148,6 +148,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: recounted via full markdown-image extraction; both repos show 8/8 badges, all 16 endpoints HTTP 200
   STATUS: FIXED.
 
+[2026-08-09] AREA: rules.txt missing LESSONS section
+  ERROR: rules.txt has no LESSONS LEARNED section - the distilled lessons were never applied
+  CAUSE: --lessons --apply had never been run on this repo's rules.txt
+  FIX: applied now via --lessons --apply (5 lessons distilled from 18 entries)
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
