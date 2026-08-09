@@ -103,6 +103,15 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
        GitHub automatically)
   STATUS: FIXED.
 
+[2026-08-09] AREA: permanent visitor counter missing
+  ERROR: GitHub traffic stats only keep 14 days, so there was no
+         permanent record of how many people viewed the repo
+  CAUSE: no visitor badge was in the README
+  FIX: added a visitor-badge.laobi.icu badge (page_id=vartiainen1.
+       agent-error-log) to the README badge row; verified the URL
+       renders an SVG (visitorbadge.io is defunct - 404 on images)
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
