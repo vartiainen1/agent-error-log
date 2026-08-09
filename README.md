@@ -10,6 +10,7 @@
 [![python](https://img.shields.io/badge/python-3.9%20%7C%203.11%20%7C%203.12-3776AB)](https://github.com/vartiainen1/agent-error-log/actions)
 [![dependencies-0](https://img.shields.io/badge/dependencies-0-brightgreen)](https://github.com/vartiainen1/agent-error-log)
 [![Visitors](https://visitor-badge.laobi.icu/badge?page_id=vartiainen1.agent-error-log&left_text=Visitors&right_color=2F80ED)](https://github.com/vartiainen1/agent-error-log)
+[![companion](https://img.shields.io/badge/companion-agent--decision--log-2ea44f)](https://github.com/vartiainen1/agent-decision-log)
 
 A tiny, dependency-free system for anyone who works with AI coding assistants
 or builds their own agent loops. Three text files + two small tools + one git

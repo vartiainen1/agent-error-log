@@ -118,6 +118,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added a Companion tool section linking agent-decision-log, mirroring its phrasing
   STATUS: FIXED.
 
+[2026-08-09] AREA: README companion badge
+  ERROR: the companion tool is not visible from the README badge row - discoverability relies on the Companion section at the bottom
+  CAUSE: the badge row only lists this repo's own metrics; the Companion section sits far down the page
+  FIX: added a companion badge to the badge row linking agent-decision-log
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
