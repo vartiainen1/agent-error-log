@@ -223,6 +223,25 @@ on `master` is advisory for the owner). To make the gate a hard requirement:
 With that, a `--no-verify` commit cannot land on `master` — the message is
 re-checked on the server, where the flag does not exist.
 
+### Shipping a change (PR workflow)
+
+With branch protection live, **direct pushes to `master` are rejected** —
+`GH006: Protected branch update failed … 7 of 7 required status checks are
+expected` — because a fresh commit has no CI checks yet. Every change lands
+via pull request:
+
+1. **Branch off `master`** and commit with the `(AREA: <logged error>)`
+   marker in the message (matching an entry in `errors.txt`):
+   `git commit -m "fix: … (AREA: search API rate limit)"`.
+2. **Push the branch, open a PR** against `master`. The six
+   `tests + linter` matrix jobs run on the PR head.
+3. **Squash-merge** once checks are green, keeping the `(AREA: …)` marker in
+   the squash title. The merge push re-runs CI **and the commit-message
+   gate** on `master` — a missing marker leaves the gate red.
+
+The gate job skips PR events on purpose: PRs are gated when the merge
+lands, so the squash title is exactly what gets re-checked on `master`.
+
 ## Tooling reference
 
 | Command | What it does |
