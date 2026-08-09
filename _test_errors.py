@@ -366,4 +366,126 @@ t("check-commit: internal spaces collapsed like the hook",
                 "fix (AREA:  payment   webhook parser)\n") == 0)
 d9.cleanup()
 
+# --- --init (one-command adoption) ------------------------------------------
+
+
+def tmp_target():
+    d = tempfile.TemporaryDirectory()
+    return d, Path(d.name)
+
+
+dI, tI = tmp_target()
+try:
+    quiet(ce.cmd_init, tI, False)  # run_tests=False
+    for f in ("errors.txt", "rules.txt", "notes.txt"):
+        t(f"init creates {f}", (tI / f).exists())
+    t("init scaffold validates",
+      quiet(ce.cmd_check, (tI / "errors.txt").read_text(encoding="utf-8")) == 0)
+    t("init scaffold keeps section-5 template",
+      "5) TO ADD A NEW ENTRY" in (tI / "errors.txt").read_text(encoding="utf-8"))
+    t("init scaffold has the example entries",
+      "EXAMPLE ENTRIES" in (tI / "errors.txt").read_text(encoding="utf-8"))
+    t("init scaffold never ships the repo's dev log",
+      "CI commit-message gate missing" not in (tI / "errors.txt").read_text(encoding="utf-8"))
+    created_err = (tI / "errors.txt").read_text(encoding="utf-8")
+    t("init scaffold is compact (single copy, no implicit-concat blowup)",
+      len(created_err) < 3000 and len(created_err.splitlines()) < 60)
+    t("init scaffold has exactly one section-5 template",
+      created_err.count("5) TO ADD A NEW ENTRY") == 1)
+    t("init scaffold has exactly one EXAMPLE ENTRIES header",
+      created_err.count("EXAMPLE ENTRIES") == 1)
+    t("init scaffold bars are full width",
+      created_err.splitlines()[0] == "=" * 80)
+    quiet(ce.cmd_init, tI, False)
+    t("init is idempotent (no new files)",
+      sorted(p.name for p in tI.iterdir()) == ["errors.txt", "notes.txt", "rules.txt"])
+    (tI / "errors.txt").write_text("USER DATA\n", encoding="utf-8")
+    quiet(ce.cmd_init, tI, False)
+    t("init never overwrites existing files",
+      (tI / "errors.txt").read_text(encoding="utf-8") == "USER DATA\n")
+finally:
+    dI.cleanup()
+
+# hook installation / backup / skip-without-git
+dJ, tJ = tmp_target()
+try:
+    (tJ / ".git" / "hooks").mkdir(parents=True)
+    quiet(ce.cmd_init, tJ, False)
+    t("init installs the hook", (tJ / ".git" / "hooks" / "commit-msg").exists())
+    t("installed hook has the gate logic",
+      "AREA:" in (tJ / ".git" / "hooks" / "commit-msg").read_text(encoding="utf-8"))
+    (tJ / ".git" / "hooks" / "commit-msg").write_text("OLD HOOK\n", encoding="utf-8")
+    quiet(ce.cmd_init, tJ, False)
+    t("init backs up an existing hook",
+      (tJ / ".git" / "hooks" / "commit-msg.agent-error-log.bak").exists())
+    t("existing hook is replaced",
+      (tJ / ".git" / "hooks" / "commit-msg").read_text(encoding="utf-8") != "OLD HOOK\n")
+    t("re-init keeps a single backup",
+      (tJ / ".git" / "hooks" / "commit-msg.agent-error-log.bak").read_text(encoding="utf-8") == "OLD HOOK\n")
+finally:
+    dJ.cleanup()
+
+dK, tK = tmp_target()
+try:
+    quiet(ce.cmd_init, tK, False)
+    t("init without git skips the hook and still exits 0",
+      not (tK / ".git" / "hooks" / "commit-msg").exists())
+finally:
+    dK.cleanup()
+
+# .git as a FILE (git worktree / submodule) resolves the gitdir pointer
+dW, tW = tmp_target()
+try:
+    gitdir = tW / "real-gitdir"
+    (gitdir / "hooks").mkdir(parents=True)
+    (tW / ".git").write_text(f"gitdir: {gitdir}\n", encoding="utf-8")
+    quiet(ce.cmd_init, tW, False)
+    t("init installs the hook when .git is a pointer file (worktree)",
+      (gitdir / "hooks" / "commit-msg").exists())
+    (tW / ".git").write_text("not a gitdir pointer\n", encoding="utf-8")
+    t("init warns cleanly on an unresolvable .git pointer",
+      quiet(ce.cmd_init, tW, False) == 0)
+finally:
+    dW.cleanup()
+
+# --target naming an existing FILE errors out cleanly
+dF, tF = tmp_target()
+try:
+    f = tF / "afile"
+    f.write_text("x", encoding="utf-8")
+    t("init rejects a file as --target", quiet(ce.cmd_init, f, False) == 1)
+finally:
+    dF.cleanup()
+
+# fallback scaffolds when only check_errors.py was copied (HERE has no templates)
+dL, tL = tmp_target()
+try:
+    with mock.patch("check_errors.HERE", tL):
+        dM, tM = tmp_target()
+        try:
+            quiet(ce.cmd_init, tM, False)
+            t("init falls back to scaffolds when templates missing",
+              "5) TO ADD A NEW ENTRY" in (tM / "errors.txt").read_text(encoding="utf-8"))
+            t("fallback rules file scaffolded",
+              "RULES OF ENGAGEMENT" in (tM / "rules.txt").read_text(encoding="utf-8"))
+            t("fallback notes file scaffolded",
+              "NOTES" in (tM / "notes.txt").read_text(encoding="utf-8"))
+        finally:
+            dM.cleanup()
+finally:
+    dL.cleanup()
+
+# selftest invocation
+dN, tN = tmp_target()
+try:
+    with mock.patch("check_errors.subprocess.run") as mr:
+        quiet(ce.cmd_init, tN, True)
+        t("init runs the unit-test selftest",
+          mr.call_count == 1 and "_test_errors.py" in str(mr.call_args[0][0]))
+    with mock.patch("check_errors.subprocess.run") as mr2:
+        quiet(ce.cmd_init, tN, False)
+        t("init skips the selftest when disabled", mr2.call_count == 0)
+finally:
+    dN.cleanup()
+
 print(f"\nAll {PASS} tests passed.")

@@ -16,12 +16,18 @@ script (or point --log at any error log):
     python check_errors.py --lessons --apply           write them into rules.txt
     python check_errors.py --check-commit msg.txt      gate on a commit message
                                                        (server-side CI backstop)
+    python check_errors.py --init [--target DIR]       one-command adoption:
+                                                       scaffold the templates,
+                                                       install the commit-msg
+                                                       hook, health-check, test
 
 Exit codes: 0 = ok / gate passed, 1 = validation errors or gate failed.
 """
 
 import argparse
+import os
 import re
+import subprocess
 import sys
 from collections import Counter
 from datetime import date, timedelta
@@ -429,6 +435,215 @@ def cmd_check_commit(text, msg_path):
     print("  then commit again.")
     return 1
 
+
+# --- One-command adoption (--init) ------------------------------------------
+# --init scaffolds the three template files (errors / rules / notes), installs
+# the commit-msg gate, health-checks the log, and runs the tooling's own unit
+# tests. Templates are copied from the folder holding this script; when only
+# check_errors.py was copied into a project (no templates), built-in minimal
+# scaffolds are used instead. Existing files are NEVER overwritten.
+
+# The errors.txt template is a STATIC scaffold, never a copy of this repo's
+# live errors.txt: the repo's log legitimately accumulates this project's own
+# dev entries, and pre-seeding a consumer's log with them would let the gate
+# "pass" for errors that were never logged in the consumer's project.
+# NOTE: every continuation line starts with '+' so adjacent string literals
+# are never implicitly concatenated (a '\n"' line followed by '"=' would make
+# '* 80' multiply the merged pair).
+MINIMAL_ERRORS = (
+    "=" * 80 + "\n"
+    + "ERROR LOG — scaffolded by check_errors.py --init\n"
+    + "=" * 80 + "\n"
+    + "\n"
+    + "MANDATORY: log FIRST, fix AFTER (enforced by check_errors.py and the\n"
+    + "git commit-msg hook). Statuses: FIXED | PARTIAL | OPEN | MITIGATED |\n"
+    + "WORKAROUND. Write the CAUSE before fixing — if you cannot explain why it\n"
+    + "broke, you have not understood it yet.\n"
+    + "\n"
+    + "=" * 80 + "\n"
+    + "EXAMPLE ENTRIES (replace with your own; delete this section header)\n"
+    + "=" * 80 + "\n"
+    + "\n"
+    + "[2026-08-05] AREA: payment webhook parser\n"
+    + "  ERROR: KeyError: 'amount' on webhook payloads without an amount field\n"
+    + "  CAUSE: the payload dict has no 'amount' key; payload['amount'] raises\n"
+    + "  FIX: use payload.get('amount', 0) and guard None before .strip()\n"
+    + "  STATUS: FIXED.\n"
+    + "\n"
+    + "[2026-08-07] AREA: image resize service timeouts\n"
+    + "  ERROR: resize job hangs for >60s on 50MP inputs\n"
+    + "  CAUSE: Pillow opens the full image into memory before resizing\n"
+    + "  FIX: (pending — use progressive downscaling / streaming resize)\n"
+    + "  STATUS: OPEN.\n"
+    + "\n"
+    + "=" * 80 + "\n"
+    + "5) TO ADD A NEW ENTRY\n"
+    + "=" * 80 + "\n"
+    + "  [YYYY-MM-DD] AREA: <what broke>\n"
+    + "    ERROR: <symptom>\n"
+    + "    CAUSE: <root cause — write this BEFORE fixing>\n"
+    + "    FIX: <what fixed it — fill in after fixing>\n"
+    + "    STATUS: FIXED | PARTIAL | OPEN | MITIGATED | WORKAROUND\n"
+)
+
+MINIMAL_RULES = (
+    "=" * 80 + "\n"
+    + "<YOUR PROJECT NAME> — RULES OF ENGAGEMENT\n"
+    + "(scaffolded by check_errors.py --init)\n"
+    + "=" * 80 + "\n"
+    + "\n"
+    + "1. CHECK BEFORE CODING: read errors.txt before writing or debugging code,\n"
+    + "   so past mistakes are not repeated.\n"
+    + "2. LOG BEFORE FIXING: found an error? log it in errors.txt FIRST, only\n"
+    + "   then fix it. No exceptions (enforced by the commit-msg hook).\n"
+    + "3. Notes go in notes.txt; behavior rules live in this file.\n"
+)
+
+MINIMAL_NOTES = (
+    "=" * 80 + "\n"
+    + "<YOUR PROJECT NAME> — NOTES\n"
+    + "(scaffolded by check_errors.py --init)\n"
+    + "=" * 80 + "\n"
+    + "\n"
+    + "SESSION NOTE (YYYY-MM-DD): <title>\n"
+    + "- what happened this session, decisions taken, and the next step\n"
+)
+
+MINIMAL_HOOK = (
+    "#!/bin/sh\n"
+    "# commit-msg hook scaffolded by check_errors.py --init\n"
+    "ROOT=\"$(git rev-parse --show-toplevel 2>/dev/null)\" || { echo \"not a git repository\"; exit 1; }\n"
+    "LOGPATH=\"${LOGNAME:-errors.txt}\"\n"
+    "CHECKER=\"${AGENT_ERROR_LOG_DIR:-$ROOT}/check_errors.py\"\n"
+    "PY=\"${PYTHON:-python}\"\n"
+    "if [ ! -f \"$CHECKER\" ]; then\n"
+    "    echo \"commit-msg: cannot find $CHECKER — place check_errors.py at the repo root\"\n"
+    "    exit 1\n"
+    "fi\n"
+    "staged=\"$(git diff --cached --name-only)\"\n"
+    "if printf '%s\\n' \"$staged\" | grep -qx \"$LOGPATH\"; then\n"
+    "    \"$PY\" \"$CHECKER\" || { echo \"commit-msg: error log invalid\"; exit 1; }\n"
+    "fi\n"
+    "if ! printf '%s\\n' \"$staged\" | grep -Eq '\\.(py|js|ts|jsx|tsx|html|bat|sh|cmd)$'; then\n"
+    "    exit 0\n"
+    "fi\n"
+    "line=\"$(tr -d '\\r' < \"$1\" 2>/dev/null | grep -i -m1 -E 'AREA:|LOG:')\"\n"
+    "area=\"$(printf '%s\\n' \"$line\" | sed -E 's/^.*(AREA|LOG):[[:space:]]*//I' | sed -E 's/[),.;:]+[[:space:]]*$//' | tr -s ' ')\"\n"
+    "if [ -z \"$area\" ]; then\n"
+    "    echo \"commit-msg BLOCKED: code staged but no 'AREA:' marker in the message.\"\n"
+    "    echo \"  Log the error first: python check_errors.py --add\"\n"
+    "    exit 1\n"
+    "fi\n"
+    "\"$PY\" \"$CHECKER\" --has-entry \"$area\"\n"
+    "exit $?\n"
+)
+
+
+def _template_text(name, fallback):
+    """Content for a template file: the real template next to this script (for
+    rules.txt / notes.txt / the hook), or a minimal built-in scaffold when it
+    is missing (e.g. only check_errors.py was copied into the target project).
+
+    NOTE: errors.txt does NOT go through here — it is always the static
+    MINIMAL_ERRORS scaffold, so a consumer never inherits this repo's dev log.
+    rules.txt / notes.txt are copied from HERE only because they are verified
+    generic templates; keep them free of project-specific content, or they
+    will need the same static treatment."""
+    p = HERE / name
+    if p.exists():
+        return p.read_text(encoding="utf-8", errors="replace")
+    return fallback
+
+
+def _install_hook(target):
+    """Install the commit-msg gate into target/.git/hooks.
+
+    Returns (installed: bool, note: str). Never fails on a missing repo —
+    --init warns and continues, so it stays a one-command setup even before
+    'git init'. An existing hook is backed up, not clobbered.
+    """
+    git_dir = target / ".git"
+    if not git_dir.exists():
+        return False, ("not a git repository — hook NOT installed (run 'git init' "
+                       "here first, then re-run --init)")
+    if git_dir.is_file():
+        # git worktree / submodule: .git is a pointer file to the real gitdir.
+        m = re.match(r"gitdir:\s*(.+)$", git_dir.read_text(encoding="utf-8", errors="replace").strip())
+        if not m:
+            return False, "cannot resolve .git pointer (worktree) — hook NOT installed"
+        p = Path(m.group(1).strip())
+        git_dir = p if p.is_absolute() else (target / p).resolve()
+        if not git_dir.is_dir():
+            return False, f"resolved gitdir missing: {git_dir} — hook NOT installed"
+    hooks = git_dir / "hooks"
+    hooks.mkdir(parents=True, exist_ok=True)
+    dest = hooks / "commit-msg"
+    if dest.exists():
+        bak = hooks / "commit-msg.agent-error-log.bak"
+        if bak.exists():
+            bak.unlink()
+        dest.rename(bak)
+        print(f"  backed up previous hook to: {bak}")
+    dest.write_text(_template_text("git-commitmsg-hook.sh", MINIMAL_HOOK), encoding="utf-8")
+    try:
+        os.chmod(dest, 0o755)  # executable bit (best-effort on Windows)
+    except OSError:
+        pass
+    return True, f"installed commit-msg hook: {dest}"
+
+
+def cmd_init(target, run_tests=True):
+    """One-command adoption: scaffold the templates, install the git hook,
+    health-check the error log, and (optionally) run the unit tests.
+
+    Existing files are never overwritten; a missing git repo only warns.
+    """
+    target = Path(target)
+    if target.exists() and not target.is_dir():
+        print(f"--init target is not a directory: {target}")
+        return 1
+    target.mkdir(parents=True, exist_ok=True)
+    print(f"--init target: {target}")
+    # errors.txt is always the clean static scaffold (see MINIMAL_ERRORS);
+    # rules.txt / notes.txt / the hook are copied from this repo's templates.
+    for name, content in (("errors.txt", MINIMAL_ERRORS),
+                          ("rules.txt", _template_text("rules.txt", MINIMAL_RULES)),
+                          ("notes.txt", _template_text("notes.txt", MINIMAL_NOTES))):
+        dest = target / name
+        if dest.exists():
+            print(f"  exists: {name} (left untouched)")
+            continue
+        dest.write_text(content, encoding="utf-8")
+        print(f"  created: {name}")
+    ok, note = _install_hook(target)
+    if ok:
+        print(f"  hook: {note}")
+    else:
+        print(f"  WARN: {note}")
+    log = target / "errors.txt"
+    if log.exists():
+        rc = cmd_check(load(log))
+        print(f"  health check: error log {'OK' if rc == 0 else 'HAS PROBLEMS (see above)'}")
+    else:
+        print("  WARN: no errors.txt to health-check")
+    selftest = HERE / "_test_errors.py"
+    if run_tests and selftest.exists():
+        print(f"  self-test: running the tooling's unit tests ({selftest}) ...")
+        ret = subprocess.run([sys.executable, str(selftest)], check=False)
+        if ret.returncode != 0:
+            print(f"  self-test FAILED (exit {ret.returncode}) — the tooling is broken")
+            print("  in this environment; adoption continues but fix it before relying on")
+            print("  the gate.")
+            return 1
+        print("  self-test: all tests passed")
+    else:
+        print("  self-test: skipped (run_tests off, or no _test_errors.py next to")
+        print("             check_errors.py)")
+    print("  NEXT: python check_errors.py to validate; start.py for the session")
+    print("        bootstrap. Behavior rules live in rules.txt.")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Validate and maintain the error log (stdlib only). "
@@ -452,7 +667,18 @@ def main():
     ap.add_argument("--check-commit", metavar="FILE",
                     help="gate: exit 0 only if the commit message in FILE "
                          "names a logged error (AREA:/LOG: marker)")
+    ap.add_argument("--init", action="store_true",
+                    help="one-command adoption: scaffold errors/rules/notes, "
+                         "install the commit-msg hook, health-check, self-test")
+    ap.add_argument("--target", metavar="DIR",
+                    help="with --init: directory to adopt (default: current "
+                         "directory)")
+    ap.add_argument("--no-tests", action="store_true",
+                    help="with --init: skip the tooling's unit-test run")
     args = ap.parse_args()
+
+    if args.init:
+        return cmd_init(args.target or ".", run_tests=not args.no_tests)
 
     log_path = Path(args.log) if args.log else LOG
     if not log_path.exists():
