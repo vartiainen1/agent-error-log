@@ -65,9 +65,11 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   STATUS: FIXED.
 
 [2026-08-09] AREA: README stale test count
-  ERROR: README Quick start still says "all 64 should pass" after the suite grew to 90
-  CAUSE: quick-start line was never updated when the --lessons tests were added
-  FIX: corrected the README line to "all 90 should pass"
+  ERROR: README Quick start said "all 64 should pass" (then 90) while the real
+         suite grew; a review quoted the stale "90 unit tests" from the README
+  CAUSE: file-listing / quick-start lines never updated when tests were added
+  FIX: corrected to 64->90 (2026-08-09) and again 90->117 after --init added
+       27 tests; a sweep now finds no stale counts anywhere in the repo
   STATUS: FIXED.
 
 [2026-08-09] AREA: README missing PR-workflow docs
@@ -81,6 +83,14 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   CAUSE: no one-command setup existed in check_errors.py
   FIX: check_errors.py --init scaffolds errors/rules/notes, installs the
        commit-msg hook, health-checks the log, and runs the unit tests
+  STATUS: FIXED.
+
+[2026-08-09] AREA: community polish missing
+  ERROR: no issue/PR templates or security policy, so contributors lack
+         guidance and the repo looks younger than its docs
+  CAUSE: polish was deferred while core features shipped
+  FIX: added bug + feature issue templates, a PR template that enforces
+       the AREA-marker discipline, and SECURITY.md
   STATUS: FIXED.
 
 ================================================================================
