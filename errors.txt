@@ -94,6 +94,15 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
        the AREA-marker discipline, and SECURITY.md
   STATUS: FIXED.
 
+[2026-08-09] AREA: code of conduct missing
+  ERROR: GitHub community standards showed no CODE_OF_CONDUCT.md, leaving
+         the standards checklist incomplete (health 85%)
+  CAUSE: it was simply never added; the repo shipped license + contributing
+         + templates but skipped the code of conduct
+  FIX: added CODE_OF_CONDUCT.md (Contributor Covenant 2.1, recognized by
+       GitHub automatically)
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
