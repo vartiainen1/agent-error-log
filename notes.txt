@@ -69,3 +69,23 @@ NEXT-SESSION STARTER
 - Commit convention: git commit -m "... (AREA: <what broke>)".
 - Obvious next work: the image resize timeout (OPEN).
 ================================================================================
+
+================================================================================
+SESSION NOTE (2026-08-09): v0.4.0 SHIPPED + LIVE PAGES VERIFIED
+================================================================================
+WHAT HAPPENED
+- Companion decision-log released v0.4.0 (PR #12 -> master 790fc5b): the --stats analytics
+  command, _topic_of heuristic docs, and the OPEN-decision resolve chore. Release decision
+  dogfooded first (26 decisions, lint 0/0); master CI 9/9 green; draft published (draft: false).
+- Mirrored the v0.4.0 SESSION NOTE into this repo's notes.txt so both repos' boot recall tell
+  the same story.
+- Verified both live repo pages via GitHub API + HTTP checks: 8/8 badges per repo (16 total,
+  all HTTP 200), releases current (this repo v0.7.0, decision-log v0.4.0).
+CURRENT STATE
+- This repo: 125 tests, 17 entries lint 0/0, v0.7.0 live, gate + drift guard green, tree clean.
+- Decision-log: 124 tests, 26 decisions lint 0/0, v0.4.0 live.
+NEXT-SESSION STARTER
+- Candidate fix: decision-log README lacks the PR-workflow section this repo documents
+  (CONTRIBUTING.md only).
+- Distribution remains the lever: 0 stars / 1 watcher - pitch kit ready to post.
+================================================================================
