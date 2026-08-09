@@ -3,6 +3,13 @@
 > Give your AI coding agent a **memory for its own mistakes** — and make
 > "log before fixing" mechanically enforced instead of merely encouraged.
 
+[![CI](https://github.com/vartiainen1/agent-error-log/actions/workflows/ci.yml/badge.svg)](https://github.com/vartiainen1/agent-error-log/actions/workflows/ci.yml)
+[![checks on master](https://img.shields.io/github/checks-status/vartiainen1/agent-error-log/master)](https://github.com/vartiainen1/agent-error-log/actions)
+[![release](https://img.shields.io/github/v/release/vartiainen1/agent-error-log)](https://github.com/vartiainen1/agent-error-log/releases)
+[![license](https://img.shields.io/github/license/vartiainen1/agent-error-log)](https://github.com/vartiainen1/agent-error-log/blob/master/LICENSE)
+[![python](https://img.shields.io/badge/python-3.9%20%7C%203.11%20%7C%203.12-3776AB)](https://github.com/vartiainen1/agent-error-log/actions)
+[![dependencies-0](https://img.shields.io/badge/dependencies-0-brightgreen)](https://github.com/vartiainen1/agent-error-log)
+
 A tiny, dependency-free system for anyone who works with AI coding assistants
 or builds their own agent loops. Three text files + two small tools + one git
 hook + optional harness blockers = an agent that:

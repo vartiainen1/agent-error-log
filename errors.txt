@@ -58,6 +58,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: hooks/install.sh - one command installs all of them, idempotently
   STATUS: FIXED.
 
+[2026-08-09] AREA: README CI badges missing
+  ERROR: the README header showed no CI status, so pass/fail was invisible at a glance
+  CAUSE: badges were a roadmap item but never added
+  FIX: shields.io + GitHub workflow badges (CI, checks, release, license, python, deps)
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
