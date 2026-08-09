@@ -112,6 +112,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
        renders an SVG (visitorbadge.io is defunct - 404 on images)
   STATUS: FIXED.
 
+[2026-08-09] AREA: README companion cross-link
+  ERROR: the sibling repo agent-decision-log has no back-link from this README - discoverability is one-way
+  CAUSE: verification showed agent-decision-log's README links here, but this README has no Companion section at all
+  FIX: added a Companion tool section linking agent-decision-log, mirroring its phrasing
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
