@@ -64,6 +64,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: shields.io + GitHub workflow badges (CI, checks, release, license, python, deps)
   STATUS: FIXED.
 
+[2026-08-09] AREA: README stale test count
+  ERROR: README Quick start still says "all 64 should pass" after the suite grew to 90
+  CAUSE: quick-start line was never updated when the --lessons tests were added
+  FIX: corrected the README line to "all 90 should pass"
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================

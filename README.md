@@ -91,7 +91,7 @@ Works on Windows / macOS / Linux.
 3. **Run it:**
    ```sh
    python start.py        # boots the session: health check + open errors + notes
-   python _test_errors.py # sanity-check the tooling (all 64 should pass)
+   python _test_errors.py # sanity-check the tooling (all 90 should pass)
    ```
 
 ### Adopting with a custom agent (no AGENTS.md support)
