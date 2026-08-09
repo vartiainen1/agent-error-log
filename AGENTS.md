@@ -58,3 +58,7 @@ git commit -m "fix <thing> (AREA: <what broke>)"
   `SESSION NOTE (YYYY-MM-DD): TITLE`.
 - Archive old FIXED entries occasionally:
   `python check_errors.py --archive-days 30 --apply`.
+## Companion tool
+
+`agent-decision-log` (decisions.txt) records what was CHOSEN and why -
+proactive memory. This log records what BROKE - reactive memory. Use both.
