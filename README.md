@@ -335,7 +335,7 @@ limitation: `--no-verify`*: even a bypassed hook can't hide a broken log or a
 failing test.
 
 **Releases** — the version at the top of `CHANGELOG.md` is the single source
-of truth. Bump it and push to `main`: the release workflow
+of truth. Bump it and push to `master`: the release workflow
 (`.github/workflows/release.yml`) creates a `vX.Y.Z` tag and opens a **draft**
 GitHub Release with that changelog section as the body — publish it on the
 Releases page when ready.

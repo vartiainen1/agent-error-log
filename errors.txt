@@ -175,6 +175,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added FAQ entry explaining HERE defaults and the --log flag
   STATUS: FIXED.
 
+[2026-08-10] AREA: doc - README release note says push to main, repo uses master
+  ERROR: README Development section instructs bumping and pushing to main, but the repo default branch is master
+  CAUSE: release.yml watches both master and main; the README PR section and badges all use master
+  FIX: changed the release note to say master
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
