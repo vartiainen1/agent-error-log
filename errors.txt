@@ -197,7 +197,7 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   ERROR: external code review scored structure 8/20: no type hints, entries are raw dicts, no exception types
   CAUSE: stdlib-only tools shipped untyped; parse_entries returned dict[str, str] entries
   FIX: full type hints, ErrorEntry dataclass with dict-compat __getitem__ bridge, AgentLogError vocabulary
-  STATUS: OPEN.
+  STATUS: FIXED.
 
 ================================================================================
 5) TO ADD A NEW ENTRY
