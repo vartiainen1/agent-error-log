@@ -181,6 +181,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: changed the release note to say master
   STATUS: FIXED.
 
+[2026-08-10] AREA: unicode stdin double-encoded on Windows - stdout reconfigured, stdin not
+  ERROR: a --add entry with unicode AREA text (cafe, em-dash) is written mojibake (cafÃ©) when stdin is piped
+  CAUSE: check_errors.py reconfigures sys.stdout to utf-8 but leaves sys.stdin on the locale codepage (cp1252), so piped UTF-8 is decoded as latin-1 then re-encoded
+  FIX: added the same reconfigure for sys.stdin; regression test pins a unicode round-trip through the CLI
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
