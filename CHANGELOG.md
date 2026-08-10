@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Professional packaging: `pyproject.toml` (version derived from the git tag via
+  setuptools-scm - no drift), a global `error-log` console script, zero runtime
+  dependencies.
+- Installed-mode defaults guard (`_default_base`): pip-installed runs resolve
+  default paths against the current directory; in-place copies keep resolving
+  against the file's folder.
+- CI `packaging` job: builds the wheel, installs it into a fresh venv, and
+  smoke-tests the console script + module import.
+- `publish.yml`: trusted publishing to PyPI, gated behind the `PUBLISH_TO_PYPI`
+  repository variable (skipped until enabled).
+
+
 
 
 ## [0.8.0] - 2026-08-10

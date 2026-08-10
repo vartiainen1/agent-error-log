@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-error-log"
+dynamic = ["version"]
+description = "Give your AI coding agent a memory for its mistakes - log before fixing, mechanically enforced"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+keywords = ["ai", "agents", "claude", "llm", "error-log", "memory", "cli"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development",
+  "Topic :: Utilities",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/vartiainen1/agent-error-log"
+Repository = "https://github.com/vartiainen1/agent-error-log"
+Changelog = "https://github.com/vartiainen1/agent-error-log/blob/master/CHANGELOG.md"
+Releases = "https://github.com/vartiainen1/agent-error-log/releases"
+
+[project.scripts]
+error-log = "check_errors:main"
+
+[tool.setuptools]
+py-modules = ["check_errors"]
+
+[tool.setuptools_scm]
+fallback_version = "0.0.0"

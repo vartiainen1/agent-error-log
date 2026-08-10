@@ -1,0 +1,35 @@
+name: Publish
+
+# Trusted publishing to PyPI: builds the wheel and publishes whenever a GitHub
+# Release is published (i.e. when the release workflow's draft is published).
+# Enabled by setting the repository VARIABLE PUBLISH_TO_PYPI to 'true'
+# (Settings > Secrets and variables > Actions) after one-time PyPI setup:
+#   1. Create the project on PyPI (name must match [project] name here).
+#   2. PyPI project > Publishing: add a pending publisher for
+#      owner "vartiainen1", repository "agent-error-log", workflow "publish.yml".
+# Until the variable is set this job is skipped, so nothing can break the flow.
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    if: vars.PUBLISH_TO_PYPI == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build sdist + wheel
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

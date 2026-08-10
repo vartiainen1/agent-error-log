@@ -5,3 +5,8 @@ __pycache__/
 # transient log lock files (lost-update fix)
 *.lock
 *.lock.stale
+
+# packaging artifacts
+dist/
+build/
+*.egg-info

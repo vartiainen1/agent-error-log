@@ -44,8 +44,22 @@ if sys.stdin and hasattr(sys.stdin, "reconfigure"):
     sys.stdin.reconfigure(encoding="utf-8", errors="replace")
 
 HERE = Path(__file__).resolve().parent
+
+
+def _default_base(module_dir: Path) -> Path:
+    """Directory the file defaults resolve to.
+
+    In-place single-file adoption (the normal case) resolves against this
+    file's folder. When pip-installed the module lives in site-packages, so
+    defaults resolve against the current directory instead - an installed
+    ``error-log`` command must never write into site-packages.
+    """
+    return Path.cwd() if "site-packages" in module_dir.parts else module_dir
+
+
+BASE = _default_base(HERE)
 # Default error log filename. Rename to match your project, or pass --log PATH.
-LOG = HERE / "errors.txt"
+LOG = BASE / "errors.txt"
 
 STATUSES: tuple[str, ...] = ("FIXED", "PARTIAL", "OPEN", "MITIGATED", "WORKAROUND")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -54,7 +68,7 @@ FIELD_RE = re.compile(r"^  (?P<field>ERROR|CAUSE|FIX|STATUS):\s*(?P<value>.*)$")
 SEP_RE = re.compile(r"^={10,}$")
 ARCHIVE_TITLE = "ARCHIVED ENTRIES"
 SECTION5 = "5) TO ADD A NEW ENTRY"
-RULES = HERE / "rules.txt"          # rules file holding the LESSONS section
+RULES = BASE / "rules.txt"          # rules file holding the LESSONS section
 LESSONS_HEADER = "LESSONS LEARNED"
 STOPWORDS = frozenset({"about","after","also","and","are","been","before","being","but","can","cause","causes","could","did","does","error","errors","even","every","first","fix","fixed","from","have","into","issue","issues","just","logged","make","more","most","must","other","over","same","should","some","still","such","than","that","their","them","then","there","these","they","this","those","through","under","used","using","very","was","were","what","when","where","which","while","will","with","without","would","your"})
 

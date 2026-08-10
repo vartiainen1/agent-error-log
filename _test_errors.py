@@ -666,4 +666,12 @@ t("exception vocabulary is a real hierarchy",
   issubclass(ce.ValidationError, ce.AgentLogError)
   and issubclass(ce.LockTimeoutError, ce.AgentLogError))
 
+# --- professional packaging: installed-mode defaults guard ---------------
+t("default base: in-place file resolves to its own folder",
+  ce._default_base(Path("/home/user/project/check_errors.py"))
+  == Path("/home/user/project/check_errors.py"))
+t("default base: pip-installed module resolves to the cwd",
+  ce._default_base(Path("/usr/local/lib/python3.12/site-packages/check_errors.py"))
+  == Path.cwd())
+
 print(f"\nAll {PASS} tests passed.")

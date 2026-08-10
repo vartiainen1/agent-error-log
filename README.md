@@ -68,7 +68,7 @@ agent-error-log/
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
-├── _test_errors.py         137 unit tests for the tooling
+├── _test_errors.py         139 unit tests for the tooling
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
 ├── hooks/                  optional harness-level --no-verify blockers
 ├── rules.txt               RULES template (how the agent behaves)
@@ -93,7 +93,7 @@ Works on Windows / macOS / Linux.
 3. **Run it:**
    ```sh
    python start.py        # boots the session: health check + open errors + notes
-   python _test_errors.py # sanity-check the tooling (all 137 should pass)
+   python _test_errors.py # sanity-check the tooling (all 139 should pass)
    ```
 
 ### Adopting with a custom agent (no AGENTS.md support)
@@ -320,7 +320,7 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 ## Development
 
 ```sh
-python _test_errors.py   # 137 tests: parsing, validation, gate, add, archive, lessons, init
+python _test_errors.py   # 139 tests: parsing, validation, gate, add, archive, lessons, init
 ```
 
 The tests build throwaway logs in temp dirs — they never touch your real
@@ -359,3 +359,21 @@ MIT — see [LICENSE](LICENSE).
 ---
 
 [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
+
+## Installing with pip (optional)
+
+The single-file adoption story is unchanged - copy `check_errors.py` into your
+project and you are done. The tool is *also* pip-installable with zero runtime
+dependencies:
+
+```sh
+pip install agent-error-log
+error-log --help
+```
+
+- The package version is derived from the git tag (setuptools-scm), which the
+  release workflow creates from CHANGELOG.md - there is no version to drift.
+- Run from the installed package, default paths (`errors.txt`, `rules.txt`)
+  resolve against your current directory; an in-place copy keeps resolving
+  against the file's folder.
+- `--init` works identically from an installed copy (built-in templates).
