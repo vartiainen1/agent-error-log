@@ -305,6 +305,9 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 - **Do I need pip / npm?** No. Zero dependencies.
 - **Does it work on Windows?** Yes — UTF-8 handling is built in, plus a
   `start.bat` launcher.
+- **Can I log unicode (café, em-dash) on Windows?** Yes — both `stdout`
+  and `stdin` are reconfigured to UTF-8, so piped unicode text is stored
+  as-is, never double-encoded.
 - **I already keep a NOTES.md — why this?** NOTES.md is unstructured and
   unenforced. This adds a machine-validated format, a hard commit gate, and
   automated session checks on top of the same idea.

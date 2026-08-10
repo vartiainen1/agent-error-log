@@ -187,6 +187,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added the same reconfigure for sys.stdin; regression test pins a unicode round-trip through the CLI
   STATUS: FIXED.
 
+[2026-08-10] AREA: doc - FAQ documents Windows stdin unicode handling
+  ERROR: README FAQ lacks an entry noting piped unicode (caf�, em-dash) is handled on Windows
+  CAUSE: the stdin-utf8 fix (PR #23) shipped without a user-facing note
+  FIX: added a FAQ entry documenting that stdin is reconfigured to UTF-8 like stdout
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
