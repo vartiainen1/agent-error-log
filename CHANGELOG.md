@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Typed entries: `parse_entries()` now returns `ErrorEntry` dataclasses (dict-compatible via `__getitem__`), full type hints on all functions, and a small exception vocabulary (`AgentLogError` / `ValidationError` / `LockTimeoutError`) — same behavior, same exit codes.
 - stdin reconfigured to UTF-8 on Windows: piped unicode no longer double-encodes into the log (stdout-only reconfigure bug).
 - L10: `load()` no longer crashes on a locked/unreadable log file (graceful `OSError` fallback; regression tests added).
 

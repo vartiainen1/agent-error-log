@@ -24,6 +24,8 @@ script (or point --log at any error log):
 Exit codes: 0 = ok / gate passed, 1 = validation errors or gate failed.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
@@ -31,8 +33,10 @@ import subprocess
 import sys
 import time
 from collections import Counter
+from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Callable, Iterator, Optional
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -43,7 +47,7 @@ HERE = Path(__file__).resolve().parent
 # Default error log filename. Rename to match your project, or pass --log PATH.
 LOG = HERE / "errors.txt"
 
-STATUSES = ("FIXED", "PARTIAL", "OPEN", "MITIGATED", "WORKAROUND")
+STATUSES: tuple[str, ...] = ("FIXED", "PARTIAL", "OPEN", "MITIGATED", "WORKAROUND")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 ENTRY_RE = re.compile(r"^\[(?P<tag>[^\]]+)\] AREA: (?P<area>.+)$")
 FIELD_RE = re.compile(r"^  (?P<field>ERROR|CAUSE|FIX|STATUS):\s*(?P<value>.*)$")
@@ -55,7 +59,48 @@ LESSONS_HEADER = "LESSONS LEARNED"
 STOPWORDS = frozenset({"about","after","also","and","are","been","before","being","but","can","cause","causes","could","did","does","error","errors","even","every","first","fix","fixed","from","have","into","issue","issues","just","logged","make","more","most","must","other","over","same","should","some","still","such","than","that","their","them","then","there","these","they","this","those","through","under","used","using","very","was","were","what","when","where","which","while","will","with","without","would","your"})
 
 
-def load(path):
+# --- Error vocabulary -------------------------------------------------------
+class AgentLogError(Exception):
+    """Base class for tooling errors (validation / locking / usage)."""
+
+
+class ValidationError(AgentLogError):
+    """The log (or an argument) failed validation."""
+
+
+class LockTimeoutError(AgentLogError):
+    """Could not acquire the cross-process log lock within the deadline."""
+
+
+# --- Data model ---------------------------------------------------------------
+Cluster = dict[str, object]  # {"keywords": set[str], "entries": list[ErrorEntry]}
+
+
+@dataclass
+class ErrorEntry:
+    """One parsed error-log entry.
+
+    Dict-compatible on purpose: ``entry["tag"]`` still works (see
+    __getitem__), so tests, start.py and any external caller that indexed
+    parse_entries() results keep working unchanged. New code should use
+    attribute access (entry.tag, entry.fields).
+    """
+
+    tag: str
+    area: str
+    line: int
+    body: list[str]
+    fields: dict[str, str]
+    block: str
+
+    def __getitem__(self, key: str) -> object:
+        return getattr(self, key)
+
+    def get(self, key: str, default: object = None) -> object:
+        return getattr(self, key, default)
+
+
+def load(path: Path) -> str:
     """Read a text file with UTF-8 fallback (BOM-safe).
 
     Returns "" if the file cannot be read (e.g. locked by another
@@ -68,8 +113,8 @@ def load(path):
         return ""
 
 
-def parse_entries(text):
-    """Return a list of entry dicts, in file order.
+def parse_entries(text: str) -> list[ErrorEntry]:
+    """Return a list of ErrorEntry objects, in file order.
 
     An entry starts at a column-0 "[tag] AREA: ..." line (the template in
     section 5 is indented, so it never matches) and runs until the next
@@ -91,25 +136,25 @@ def parse_entries(text):
             fm = FIELD_RE.match(bl)
             if fm:
                 fields.setdefault(fm.group("field"), fm.group("value").strip())
-        entries.append({
-            "tag": m.group("tag"),
-            "area": m.group("area"),
-            "line": i,
-            "body": body,
-            "fields": fields,
-            "block": "\n".join([line] + body),
-        })
+        entries.append(ErrorEntry(
+            tag=m.group("tag"),
+            area=m.group("area"),
+            line=i,
+            body=body,
+            fields=fields,
+            block="\n".join([line] + body),
+        ))
     return entries
 
 
-def status_token(status):
+def status_token(status: str) -> str:
     """First word of a STATUS value, punctuation stripped ('FIXED.' -> 'FIXED')."""
     if not status:
         return ""
     return re.split(r"\s", status.strip())[0].rstrip(".,;—–-")
 
 
-def find_section5(text):
+def find_section5(text: str) -> Optional[int]:
     """Line index of the section-5 header, or None."""
     for i, l in enumerate(text.splitlines()):
         if l.strip() == SECTION5:
@@ -117,13 +162,14 @@ def find_section5(text):
     return None
 
 
-def _with_log_lock(log_path, fn):
+def _with_log_lock(log_path: Path, fn: Callable[[], int]) -> int:
     """Serialize a read-modify-write on log_path across processes.
 
     Creates a sibling '<name>.lock' file atomically (O_CREAT|O_EXCL, which
     fails if the lock already exists) and retries for up to 5s; the lock is
     removed in a finally block. A stale lock older than 30s (crashed writer)
-    is broken and reclaimed. Returns fn()'s result, or 1 on timeout.
+    is broken and reclaimed. Returns fn()'s result; raises LockTimeoutError
+    on timeout.
     """
     lock_path = log_path.with_name(log_path.name + ".lock")
     deadline = time.time() + 5.0
@@ -154,8 +200,7 @@ def _with_log_lock(log_path, fn):
             except OSError:
                 pass
             if time.time() > deadline:
-                print(f"timed out waiting for log lock: {lock_path}")
-                return 1
+                raise LockTimeoutError(f"timed out waiting for log lock: {lock_path}")
             time.sleep(0.05)
     try:
         return fn()
@@ -166,7 +211,7 @@ def _with_log_lock(log_path, fn):
             pass
 
 
-def _locked_append(log_path, block):
+def _locked_append(log_path: Path, block: str) -> int:
     """Append a block under the log lock, re-reading inside the lock.
 
     The read-modify-write (load -> insert_before_section5 -> write) is not
@@ -174,13 +219,18 @@ def _locked_append(log_path, block):
     entry would be silently lost. Locking and re-reading inside the lock
     makes concurrent appends safe (lost-update fix, L9).
     """
-    def do_write():
+    def do_write() -> int:
         text = load(log_path)
         log_path.write_text(insert_before_section5(text, block), encoding="utf-8")
-    return _with_log_lock(log_path, do_write)
+        return 0
+    try:
+        return _with_log_lock(log_path, do_write)
+    except LockTimeoutError as e:
+        print(e)
+        return 1
 
 
-def insert_before_section5(text, block):
+def insert_before_section5(text: str, block: str) -> str:
     """Insert a block (already formatted) directly above section 5's bar.
 
     The block goes between the last live content and the separator bar that
@@ -204,7 +254,7 @@ def insert_before_section5(text, block):
     return "\n".join(before) + "\n\n" + block.rstrip("\n") + "\n\n" + "\n".join(after) + "\n"
 
 
-def cmd_check(text):
+def cmd_check(text: str) -> int:
     """Validate every entry against the template and the status vocabulary."""
     errors, warnings = [], []
     seen = set()
@@ -237,7 +287,7 @@ def cmd_check(text):
     return 1 if errors else 0
 
 
-def cmd_has_entry(text, substr):
+def cmd_has_entry(text: str, substr: str) -> int:
     """Mechanical gate: exit 0 only if an entry mentions substr."""
     needle = substr.lower()
     found = [e for e in parse_entries(text) if needle in (e["area"] + " " + e["tag"]).lower()]
@@ -251,7 +301,7 @@ def cmd_has_entry(text, substr):
     return 1
 
 
-def ask(prompt, required=False, default=None):
+def ask(prompt: str, required: bool = False, default: Optional[str] = None) -> str:
     """Single-line interactive prompt (Ctrl-C/EOF aborts cleanly)."""
     if default:
         prompt += f" [{default}]"
@@ -268,7 +318,7 @@ def ask(prompt, required=False, default=None):
     return val
 
 
-def cmd_add(text, log_path):
+def cmd_add(text: str, log_path: Path) -> int:
     """Scaffold a new entry in the template format, then append it to the log.
 
     The passed `text` is no longer used for the write: the append
@@ -300,7 +350,7 @@ def cmd_add(text, log_path):
     return 0
 
 
-def cmd_archive(text, days, apply, log_path):
+def cmd_archive(text: str, days: int, apply: bool, log_path: Path) -> int:
     """Move FIXED entries older than N days into an ARCHIVED section."""
     cutoff = date.today() - timedelta(days=days)
     lines = text.splitlines()
@@ -369,7 +419,7 @@ def cmd_archive(text, days, apply, log_path):
     )
     rebuilt = insert_before_section5("\n".join(out).rstrip("\n") + "\n", section)
 
-    def do_archive():
+    def do_archive() -> int:
         # re-read inside the lock so an archive racing an --add (or
         # another archive) cannot clobber a concurrent write (L9)
         fresh = load(log_path)
@@ -411,7 +461,11 @@ def cmd_archive(text, days, apply, log_path):
         log_path.write_text(rebuilt_f, encoding="utf-8")
         return 0
 
-    rc = _with_log_lock(log_path, do_archive)
+    try:
+        rc = _with_log_lock(log_path, do_archive)
+    except LockTimeoutError as e:
+        print(e)
+        return 1
     if rc:
         return rc
     print(f"Archived {len(blocks)} entrie(s). Log updated.")
@@ -421,7 +475,7 @@ def cmd_archive(text, days, apply, log_path):
 
 # --- Lessons distillation (--lessons) --------------------------------------
 
-def _tokens(text):
+def _tokens(text: str) -> Iterator[str]:
     """Yield significant lowercase words (len>=4, not stopwords, no digits)."""
     for w in re.split(r"[^A-Za-z0-9_']+", text.lower()):
         w = w.strip("_'")
@@ -429,13 +483,13 @@ def _tokens(text):
             yield w
 
 
-def _entry_tokens(e):
+def _entry_tokens(e: ErrorEntry) -> list[str]:
     """Tokens of an entry's AREA + ERROR + CAUSE (the text that explains WHY)."""
     txt = " ".join([e["area"], e["fields"].get("ERROR", ""), e["fields"].get("CAUSE", "")])
     return list(_tokens(txt))
 
 
-def cluster_entries(entries):
+def cluster_entries(entries: list[ErrorEntry]) -> tuple[list[Cluster], Counter]:
     """Group entries into lessons by shared cause keywords (deterministic).
 
     Each entry is represented by its 3 most frequent significant keywords;
@@ -456,7 +510,7 @@ def cluster_entries(entries):
     return clusters, counts
 
 
-def render_lessons(clusters, counts, total):
+def render_lessons(clusters: list[Cluster], counts: Counter, total: int) -> str:
     """Render the LESSONS section text from clusters (stdout + rules.txt)."""
     lines = [
         "Distilled from the error log by: python check_errors.py --lessons [--apply]",
@@ -478,7 +532,7 @@ def render_lessons(clusters, counts, total):
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
-def _patch_rules_lessons(rules_path, body):
+def _patch_rules_lessons(rules_path: Path, body: str) -> str:
     """Replace the LESSONS section in rules.txt with body; append if absent.
 
     The header is anchored to a real section title (a numbered section
@@ -503,7 +557,7 @@ def _patch_rules_lessons(rules_path, body):
     return out.replace("\n", "\r\n") if crlf else out
 
 
-def cmd_lessons(text, rules_path, apply):
+def cmd_lessons(text: str, rules_path: Path, apply: bool) -> int:
     """Distill recurring causes into lessons; --apply writes rules.txt."""
     entries = parse_entries(text)
     if not entries:
@@ -522,7 +576,7 @@ def cmd_lessons(text, rules_path, apply):
     rules_path.write_bytes(_patch_rules_lessons(rules_path, body).encode("utf-8"))
     print(f"LESSONS section written to: {rules_path}")
     return 0
-def _extract_area(msg):
+def _extract_area(msg: str) -> Optional[str]:
     """Marker value from a commit message, or None.
 
     Matches the shell hooks exactly: the first line that carries an
@@ -540,7 +594,7 @@ def _extract_area(msg):
     return None
 
 
-def cmd_check_commit(text, msg_path):
+def cmd_check_commit(text: str, msg_path: Path) -> int:
     """Gate on a commit message file: exit 0 only if it names a logged error.
 
     Mirrors the commit-msg hook's core rule so CI can re-run it server-side,
@@ -672,7 +726,7 @@ MINIMAL_HOOK = (
 )
 
 
-def _template_text(name, fallback):
+def _template_text(name: str, fallback: str) -> str:
     """Content for a template file: the real template next to this script (for
     rules.txt / notes.txt / the hook), or a minimal built-in scaffold when it
     is missing (e.g. only check_errors.py was copied into the target project).
@@ -688,7 +742,7 @@ def _template_text(name, fallback):
     return fallback
 
 
-def _install_hook(target):
+def _install_hook(target: Path) -> tuple[bool, str]:
     """Install the commit-msg gate into target/.git/hooks.
 
     Returns (installed: bool, note: str). Never fails on a missing repo —
@@ -725,7 +779,7 @@ def _install_hook(target):
     return True, f"installed commit-msg hook: {dest}"
 
 
-def cmd_init(target, run_tests=True):
+def cmd_init(target: str, run_tests: bool = True) -> int:
     """One-command adoption: scaffold the templates, install the git hook,
     health-check the error log, and (optionally) run the unit tests.
 
@@ -777,7 +831,7 @@ def cmd_init(target, run_tests=True):
     return 0
 
 
-def main():
+def main() -> int:
     ap = argparse.ArgumentParser(
         description="Validate and maintain the error log (stdlib only). "
                     "Exit 0 = ok / gate passed, 1 = validation errors / gate failed.")
@@ -814,23 +868,25 @@ def main():
         return cmd_init(args.target or ".", run_tests=not args.no_tests)
 
     log_path = Path(args.log) if args.log else LOG
-    if not log_path.exists():
-        print(f"missing error log: {log_path}")
+    try:
+        if not log_path.exists():
+            raise ValidationError(f"missing error log: {log_path}")
+        text = load(log_path)
+        if args.has_entry is not None:
+            return cmd_has_entry(text, args.has_entry)
+        if args.add:
+            return cmd_add(text, log_path)
+        if args.archive_days is not None:
+            return cmd_archive(text, args.archive_days, args.apply, log_path)
+        if args.lessons:
+            rules_path = Path(args.rules) if args.rules else RULES
+            return cmd_lessons(text, rules_path, args.apply)
+        if args.check_commit:
+            return cmd_check_commit(text, Path(args.check_commit))
+        return cmd_check(text)
+    except AgentLogError as e:
+        print(e)
         return 1
-    text = load(log_path)
-
-    if args.has_entry is not None:
-        return cmd_has_entry(text, args.has_entry)
-    if args.add:
-        return cmd_add(text, log_path)
-    if args.archive_days is not None:
-        return cmd_archive(text, args.archive_days, args.apply, log_path)
-    if args.lessons:
-        rules_path = Path(args.rules) if args.rules else RULES
-        return cmd_lessons(text, rules_path, args.apply)
-    if args.check_commit:
-        return cmd_check_commit(text, Path(args.check_commit))
-    return cmd_check(text)
 
 
 if __name__ == "__main__":
