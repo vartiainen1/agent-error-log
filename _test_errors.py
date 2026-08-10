@@ -516,6 +516,19 @@ finally:
 
 t("status_token strips en-dash too", ce.status_token("OPEN\u2013").upper() == "OPEN")
 
+# Windows console safety: stdin must be UTF-8 too (stdout-only reconfigure
+# double-encoded piped unicode on Windows - regression).
+t("stdin is reconfigured to utf-8", getattr(sys.stdin, "encoding", "utf-8") == "utf-8")
+with mock.patch("check_errors.input", side_effect=["café 7 — dash", "boom", "the cause", "the fix", "OPEN"]):
+    du, pu = tmp_log(sample_log())
+    try:
+        t("add stores unicode as proper utf-8 bytes", quiet(ce.cmd_add, pu.read_text(encoding="utf-8"), pu) == 0)
+        raw = pu.read_bytes()
+        t("add unicode bytes are single-encoded", b"caf\xc3\xa9 7 \xe2\x80\x94 dash" in raw)
+        t("add unicode round-trips as text", "café 7 — dash" in raw.decode("utf-8"))
+    finally:
+        du.cleanup()
+
 only5 = BAR + "\n5) TO ADD A NEW ENTRY\n" + BAR + "\n"
 t("file with only section 5 validates clean", quiet(ce.cmd_check, only5) == 0)
 

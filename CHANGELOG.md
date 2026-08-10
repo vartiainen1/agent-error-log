@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- stdin reconfigured to UTF-8 on Windows: piped unicode no longer double-encodes into the log (stdout-only reconfigure bug).
 - L10: `load()` no longer crashes on a locked/unreadable log file (graceful `OSError` fallback; regression tests added).
 
 

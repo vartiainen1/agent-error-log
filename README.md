@@ -68,7 +68,7 @@ agent-error-log/
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
-├── _test_errors.py         128 unit tests for the tooling
+├── _test_errors.py         132 unit tests for the tooling
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
 ├── hooks/                  optional harness-level --no-verify blockers
 ├── rules.txt               RULES template (how the agent behaves)
@@ -93,7 +93,7 @@ Works on Windows / macOS / Linux.
 3. **Run it:**
    ```sh
    python start.py        # boots the session: health check + open errors + notes
-   python _test_errors.py # sanity-check the tooling (all 128 should pass)
+   python _test_errors.py # sanity-check the tooling (all 132 should pass)
    ```
 
 ### Adopting with a custom agent (no AGENTS.md support)
@@ -317,7 +317,7 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 ## Development
 
 ```sh
-python _test_errors.py   # 128 tests: parsing, validation, gate, add, archive, lessons, init
+python _test_errors.py   # 132 tests: parsing, validation, gate, add, archive, lessons, init
 ```
 
 The tests build throwaway logs in temp dirs — they never touch your real
