@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# transient log lock files (lost-update fix)
+*.lock
+*.lock.stale
