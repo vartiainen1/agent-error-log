@@ -29,6 +29,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
@@ -104,6 +105,69 @@ def find_section5(text):
         if l.strip() == SECTION5:
             return i
     return None
+
+
+def _with_log_lock(log_path, fn):
+    """Serialize a read-modify-write on log_path across processes.
+
+    Creates a sibling '<name>.lock' file atomically (O_CREAT|O_EXCL, which
+    fails if the lock already exists) and retries for up to 5s; the lock is
+    removed in a finally block. A stale lock older than 30s (crashed writer)
+    is broken and reclaimed. Returns fn()'s result, or 1 on timeout.
+    """
+    lock_path = log_path.with_name(log_path.name + ".lock")
+    deadline = time.time() + 5.0
+    while True:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            break
+        except FileExistsError:
+            try:
+                if time.time() - lock_path.stat().st_mtime > 30:
+                    # Atomically claim the stale lock by renaming it
+                    # aside: only one contender can win the rename, so
+                    # nobody can ever unlink a lock another process has
+                    # just created (TOCTOU hardening). The .stale file
+                    # is garbage by definition - unlinking it is safe.
+                    stale = lock_path.with_name(lock_path.name + ".stale")
+                    try:
+                        stale.unlink()
+                    except OSError:
+                        pass
+                    os.rename(lock_path, stale)
+                    try:
+                        stale.unlink()
+                    except OSError:
+                        pass
+                    continue
+            except OSError:
+                pass
+            if time.time() > deadline:
+                print(f"timed out waiting for log lock: {lock_path}")
+                return 1
+            time.sleep(0.05)
+    try:
+        return fn()
+    finally:
+        try:
+            lock_path.unlink()
+        except OSError:
+            pass
+
+
+def _locked_append(log_path, block):
+    """Append a block under the log lock, re-reading inside the lock.
+
+    The read-modify-write (load -> insert_before_section5 -> write) is not
+    atomic; two concurrent appends could both read the same text and one
+    entry would be silently lost. Locking and re-reading inside the lock
+    makes concurrent appends safe (lost-update fix, L9).
+    """
+    def do_write():
+        text = load(log_path)
+        log_path.write_text(insert_before_section5(text, block), encoding="utf-8")
+    return _with_log_lock(log_path, do_write)
 
 
 def insert_before_section5(text, block):
@@ -195,7 +259,13 @@ def ask(prompt, required=False, default=None):
 
 
 def cmd_add(text, log_path):
-    """Scaffold a new entry in the template format, then append it to the log."""
+    """Scaffold a new entry in the template format, then append it to the log.
+
+    The passed `text` is no longer used for the write: the append
+    re-reads the log inside a cross-process lock so a concurrent append
+    can never be clobbered (L9). The parameter is kept for API
+    compatibility with main() and callers.
+    """
     area = ask("AREA (what broke)", required=True)
     error = ask("ERROR (symptom)", required=True)
     cause = ask("CAUSE (root cause)", required=True)
@@ -212,7 +282,9 @@ def cmd_add(text, log_path):
         f"  FIX: {fix}\n"
         f"  STATUS: {st}.\n"
     )
-    log_path.write_text(insert_before_section5(text, block), encoding="utf-8")
+    rc = _locked_append(log_path, block)
+    if rc:
+        return rc
     print("Logged:")
     print(block.rstrip("\n"))
     return 0
@@ -286,7 +358,52 @@ def cmd_archive(text, days, apply, log_path):
         + "\n\n".join(blocks) + "\n"
     )
     rebuilt = insert_before_section5("\n".join(out).rstrip("\n") + "\n", section)
-    log_path.write_text(rebuilt, encoding="utf-8")
+
+    def do_archive():
+        # re-read inside the lock so an archive racing an --add (or
+        # another archive) cannot clobber a concurrent write (L9)
+        fresh = load(log_path)
+        # recompute the rebuild against the fresh text
+        fresh_lines = fresh.splitlines()
+        fresh_entries = parse_entries(fresh)
+        fresh_drop = set()
+        for e in moved + already:
+            # find the same entries by tag in the fresh text
+            for fe in fresh_entries:
+                if fe["tag"] == e["tag"]:
+                    for n in range(fe["line"], fe["line"] + 1 + len(fe["body"])):
+                        fresh_drop.add(n)
+                    break
+        fresh_arch = next((i for i, l in enumerate(fresh_lines)
+                           if l.startswith(ARCHIVE_TITLE)), len(fresh_lines))
+        for fe in fresh_entries:
+            if fe["line"] >= fresh_arch:
+                for n in range(fe["line"], fe["line"] + 1 + len(fe["body"])):
+                    fresh_drop.add(n)
+        if fresh_arch < len(fresh_lines):
+            top = fresh_arch
+            while top > 0 and not SEP_RE.match(fresh_lines[top - 1]):
+                top -= 1
+            bottom = fresh_arch
+            while bottom + 1 < len(fresh_lines) and not SEP_RE.match(fresh_lines[bottom + 1]):
+                bottom += 1
+            for n in range(top - 1, bottom + 2):
+                fresh_drop.add(n)
+        kept = [l for n, l in enumerate(fresh_lines) if n not in fresh_drop]
+        out_f, prev_blank = [], True
+        for l in kept:
+            blank = l.strip() == ""
+            if blank and prev_blank:
+                continue
+            out_f.append(l)
+            prev_blank = blank
+        rebuilt_f = insert_before_section5("\n".join(out_f).rstrip("\n") + "\n", section)
+        log_path.write_text(rebuilt_f, encoding="utf-8")
+        return 0
+
+    rc = _with_log_lock(log_path, do_archive)
+    if rc:
+        return rc
     print(f"Archived {len(blocks)} entrie(s). Log updated.")
     return 0
 

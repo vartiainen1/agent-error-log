@@ -154,6 +154,15 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: applied now via --lessons --apply (5 lessons distilled from 18 entries)
   STATUS: FIXED.
 
+[2026-08-10] AREA: concurrent appends lost entries (L9 lost-update)
+  ERROR: two concurrent --add runs silently lost one entry - the last
+    writer clobbered the other's insert (read-modify-write race)
+  CAUSE: append path was unlocked load -> insert_before_section5 -> write
+  FIX: serialized with a cross-process lock file (<log>.lock, atomic
+    O_CREAT|O_EXCL, 5s wait, stale-lock recovery) and re-read inside
+    the lock before writing
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+
+- Concurrent `--add` appends no longer lose entries: the append is
+  now serialized by a cross-process lock file (`<log>.lock`, stdlib-only,
+  atomic `O_CREAT|O_EXCL` create with 5s wait and stale-lock recovery)
+  and the log is re-read inside the lock before writing (lost-update fix).
+
 - `_extract_area()` marker semantics documented and pinned by tests:
   the CI gate and the shell hooks agree on the marker (first matching
   line, last `AREA:`/`LOG:` on it — the hooks' `grep -m1` + greedy `sed`).
