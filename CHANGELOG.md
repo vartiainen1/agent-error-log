@@ -7,15 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+
+## [0.8.0] - 2026-08-10
+
 ### Fixed
 - Typed entries: `parse_entries()` now returns `ErrorEntry` dataclasses (dict-compatible via `__getitem__`), full type hints on all functions, and a small exception vocabulary (`AgentLogError` / `ValidationError` / `LockTimeoutError`) — same behavior, same exit codes.
 - stdin reconfigured to UTF-8 on Windows: piped unicode no longer double-encodes into the log (stdout-only reconfigure bug).
 - L10: `load()` no longer crashes on a locked/unreadable log file (graceful `OSError` fallback; regression tests added).
-
-
-### Fixed
-
-
 - Concurrent `--add` appends no longer lose entries: the append is
   now serialized by a cross-process lock file (`<log>.lock`, stdlib-only,
   atomic `O_CREAT|O_EXCL` create with 5s wait and stale-lock recovery)
