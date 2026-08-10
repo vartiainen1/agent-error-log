@@ -89,3 +89,5 @@ NEXT-SESSION STARTER
   (CONTRIBUTING.md only).
 - Distribution remains the lever: 0 stars / 1 watcher - pitch kit ready to post.
 ================================================================================
+
+SESSION NOTE (2026-08-10): real-test re-run vs shipped masters - 2293/2293 green (error-log 749, decision-log 770, log-ai 774 incl live Ollama) with the stdin-utf8 fix live in all 3 (masters 1e4441e/73fa3f2/97036db). Re-run caught a 3rd recurrence of the HEAD-anchored-SHA-pin class: 3 VERIFY pins used `git log --oneline -1`, broke on every PR merge. Hardened all 5 to history-anchored `git log --oneline | grep -q`, fixed stale test-count pins (128/127/95 -> 132/131/96), added workspace rule 13 (VERIFY SHA PINS MUST BE HISTORY-ANCHORED). Workspace 98/98 pins, boot rc=0. Lesson: pins referencing commits must use history membership, never HEAD.
