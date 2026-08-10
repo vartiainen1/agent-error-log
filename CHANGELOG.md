@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- L10: `load()` no longer crashes on a locked/unreadable log file (graceful `OSError` fallback; regression tests added).
+
+
+### Fixed
 
 
 - Concurrent `--add` appends no longer lose entries: the append is
