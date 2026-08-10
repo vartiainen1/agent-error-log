@@ -169,6 +169,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: wrap the read in try/except OSError, return "" (graceful, never raises)
   STATUS: FIXED
 
+[2026-08-10] AREA: doc - HERE-relative default paths FAQ
+  ERROR: FAQ lacks the HERE-relative default-path behavior; scratch users can pollute their real repo logs
+  CAUSE: defaults resolve relative to the script location (HERE), not cwd - undocumented
+  FIX: added FAQ entry explaining HERE defaults and the --log flag
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================

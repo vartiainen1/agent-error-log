@@ -309,6 +309,10 @@ lands, so the squash title is exactly what gets re-checked on `master`.
   unenforced. This adds a machine-validated format, a hard commit gate, and
   automated session checks on top of the same idea.
 - **Can I use my own file names?** Yes — see Customization.
+- **I copied the tool to a scratch folder — will it touch my real repo?** No.
+  Default paths resolve relative to the script location (`HERE`), so a scratch
+  copy logs next to itself. Point at your real log from anywhere with
+  `--log path/to/errors.txt`.
 
 ## Development
 
