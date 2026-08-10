@@ -193,6 +193,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: added a FAQ entry documenting that stdin is reconfigured to UTF-8 like stdout
   STATUS: FIXED.
 
+[2026-08-10] AREA: code review - missing type hints and dataclasses
+  ERROR: external code review scored structure 8/20: no type hints, entries are raw dicts, no exception types
+  CAUSE: stdlib-only tools shipped untyped; parse_entries returned dict[str, str] entries
+  FIX: full type hints, ErrorEntry dataclass with dict-compat __getitem__ bridge, AgentLogError vocabulary
+  STATUS: OPEN.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
