@@ -590,4 +590,54 @@ def _concurrent_add_all_survive():
 
 t("L9 concurrent appends lose nothing (both entries + lock cleaned)", _concurrent_add_all_survive())
 
+
+
+# --- L10 regression: load() must not crash on a locked/unreadable file ------
+def _locked_load_fallback():
+    import tempfile
+    d = tempfile.mkdtemp()
+    try:
+        p = Path(d) / "locked.txt"
+        p.write_text("content", encoding="utf-8")
+        with mock.patch.object(Path, "read_text",
+                               side_effect=PermissionError(13, "denied")):
+            val = ce.load(p)
+            return val == ""
+    finally:
+        _sh.rmtree(d, ignore_errors=True)
+
+
+t("L10 locked/unreadable file degrades, never crashes", _locked_load_fallback())
+
+# Real msvcrt lock probe on Windows (skips elsewhere)
+def _real_lock_probe():
+    try:
+        import msvcrt
+    except ImportError:
+        return True  # non-Windows: portable test above covers it
+    import tempfile
+    d = tempfile.mkdtemp()
+    try:
+        p = Path(d) / "locked.txt"
+        p.write_text("content", encoding="utf-8")
+        fh = open(p, "r+", encoding="utf-8")
+        try:
+            try:
+                msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+            except OSError:
+                return True  # lock unavailable in this environment
+            val = ce.load(p)
+            return val == ""
+        finally:
+            try:
+                msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+            except OSError:
+                pass
+            fh.close()
+    finally:
+        _sh.rmtree(d, ignore_errors=True)
+
+
+t("L10 real locked-file read degrades (Windows msvcrt)", _real_lock_probe())
+
 print(f"\nAll {PASS} tests passed.")

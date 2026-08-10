@@ -163,6 +163,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
     the lock before writing
   STATUS: FIXED.
 
+[2026-08-10] AREA: L10 locked-file read crash
+  ERROR: load() raised PermissionError on a Windows-locked log file, crashing --check
+  CAUSE: bare read_text with no try/except (the exact class lesson 10 fixed in the workspace)
+  FIX: wrap the read in try/except OSError, return "" (graceful, never raises)
+  STATUS: FIXED
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
