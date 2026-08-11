@@ -603,6 +603,7 @@ def _extract_area(msg: str) -> Optional[str]:
         if not marks:
             continue
         area = line[marks[-1].end():]
+        area = re.sub(r"\s*\(\s*#\d+\s*\)\s*$", "", area)  # GitHub squash-merge '(#NN)' suffix
         area = re.sub(r"[),.;:]+\s*$", "", area)
         return re.sub(r"\s+", " ", area).strip()
     return None

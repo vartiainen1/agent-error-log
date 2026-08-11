@@ -226,3 +226,13 @@ the entry for you and validates the status):
        36 commits: 17 findings (R2 x6 / R4 x6 / R6 x5), every class
        classified, none suppressed.
   STATUS: FIXED.
+[2026-08-11] AREA: squash-merge (#NN) suffix breaks the commit gate in CI
+  ERROR: a GitHub squash-merge commit title "... (AREA: x) (#31)" makes the
+         CI gate extract "x) (#31" instead of "x", so the merge commit is
+         BLOCKED even though the AREA is logged
+  CAUSE: _extract_area (and the hook sed) strip trailing punctuation but not
+         the PR-number group GitHub appends to squash-merge titles
+  FIX: _extract_area and git-commitmsg-hook.sh now strip a trailing "(#NN)"
+       group (GitHub squash-merge suffix) before the punctuation strip,
+       pinned by a test; the CI gate passes on merged squash commits.
+  STATUS: FIXED.
