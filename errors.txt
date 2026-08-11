@@ -236,3 +236,10 @@ the entry for you and validates the status):
        group (GitHub squash-merge suffix) before the punctuation strip,
        pinned by a test; the CI gate passes on merged squash commits.
   STATUS: FIXED.
+[2026-08-11] AREA: dogfood ledger refresh - squash-merge (#NN) fix round
+  ERROR: the Dogfood ledger numbers went stale after the squash-merge (#NN)
+         fix round (new commits, larger scan window)
+  CAUSE: the gate scans initial commit -> HEAD, so the fix PRs grew the
+         window; findings themselves are unchanged (17: R2 x6 / R4 x6 / R6 x5)
+  FIX: refreshed the ledger row (36 -> 38 commits, ~2,700 -> ~2,800 lines).
+  STATUS: OPEN.
