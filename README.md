@@ -377,3 +377,30 @@ error-log --help
   resolve against your current directory; an in-place copy keeps resolving
   against the file's folder.
 - `--init` works identically from an installed copy (built-in templates).
+
+## Dogfood ledger
+
+This repo is reviewed by its own family gate. **agent-diff-gate** was run
+over this repo's entire history (initial commit → `HEAD`):
+
+| | |
+|---|---|
+| Commits scanned | 36 (~2,700 diff lines) |
+| Findings | **17** — 6 HIGH · 6 MEDIUM · 5 LOW |
+| Classes | R2 ×6 (HIGH) · R4 ×6 (MEDIUM) · R6 ×5 (LOW) |
+| Suppressed | **none** — every finding is fixed, tracked in `errors.txt`, or documented here |
+
+- **R2 (HIGH)** — best-effort cleanup swallows in `check_errors.py` (stale
+  lock-file unlink, best-effort `chmod`) and a test-teardown swallow in
+  `_test_errors.py`. Deliberate by intent — cleanup failure is non-fatal —
+  and documented here as the accepted class.
+- **R4 (MEDIUM)** — the documented test-fixture duplication class.
+- **R6 (LOW)** — URL literals in docs and fixtures. R6 flags all
+  non-placeholder URLs in added lines, including test files, by design.
+
+Reproduce from this repo:
+
+```sh
+git diff $(git rev-list --max-parents=0 HEAD) HEAD \
+  | python <path-to>/agent-diff-gate/check_diff.py --stdin --json
+```
