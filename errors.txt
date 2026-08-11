@@ -226,6 +226,16 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
        that defines the gate and the appearing classes (R2/R4/R6)
   STATUS: FIXED.
 
+[2026-08-11] AREA: README consistency audit fixes - section order, companion badges, title casing
+  ERROR: README audit found cross-repo inconsistencies - Title Case H1
+         (others lowercase), a single companion badge (others link all
+         siblings), and a What's-inside tree missing the drift guard
+  CAUSE: repos edited independently without a shared template pass
+  FIX: unified title to lowercase repo-name style; companion badges now
+       link decision-log + log-ai + diff-gate; tree includes the
+       _check_readme_count.py drift guard
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================

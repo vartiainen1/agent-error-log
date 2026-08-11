@@ -1,4 +1,4 @@
-# Agent Error Log
+# agent-error-log
 
 > Give your AI coding agent a **memory for its own mistakes** — and make
 > "log before fixing" mechanically enforced instead of merely encouraged.
@@ -10,7 +10,9 @@
 [![python](https://img.shields.io/badge/python-3.9%20%7C%203.11%20%7C%203.12-3776AB)](https://github.com/vartiainen1/agent-error-log/actions)
 [![dependencies-0](https://img.shields.io/badge/dependencies-0-brightgreen)](https://github.com/vartiainen1/agent-error-log)
 [![Visitors](https://visitor-badge.laobi.icu/badge?page_id=vartiainen1.agent-error-log&left_text=Visitors&right_color=2F80ED)](https://github.com/vartiainen1/agent-error-log)
-[![companion](https://img.shields.io/badge/companion-agent--decision--log-2ea44f)](https://github.com/vartiainen1/agent-decision-log)
+[![companion-decision](https://img.shields.io/badge/companion-agent--decision--log-2ea44f)](https://github.com/vartiainen1/agent-decision-log)
+[![companion-log-ai](https://img.shields.io/badge/companion-agent--log--ai-2ea44f)](https://github.com/vartiainen1/agent-log-ai)
+[![companion-diff-gate](https://img.shields.io/badge/companion-agent--diff--gate-2ea44f)](https://github.com/vartiainen1/agent-diff-gate)
 
 A tiny, dependency-free system for anyone who works with AI coding assistants
 or builds their own agent loops. Three text files + two small tools + one git
@@ -72,6 +74,9 @@ agent-error-log/
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
 ├── _test_errors.py         140 unit tests for the tooling
+├── _check_readme_count.py  README test-count drift guard (CI)
+├── _check_readme_count.py  README test-count drift guard (CI)
+├── _check_readme_count.py  README test-count drift guard (CI)
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
 ├── hooks/                  optional harness-level --no-verify blockers
 ├── rules.txt               RULES template (how the agent behaves)
@@ -396,7 +401,7 @@ prints the full list). The classes that appear in this repo's history:
 
 | | |
 |---|---|
-| Commits scanned | 42 (~2,800 diff lines) |
+| Commits scanned | 43 (~2,900 diff lines) |
 | Findings | **17** — 6 HIGH · 6 MEDIUM · 5 LOW |
 | Classes | R2 ×6 (HIGH) · R4 ×6 (MEDIUM) · R6 ×5 (LOW) |
 | Suppressed | **none** — every finding is fixed, tracked in `errors.txt`, or documented here |
