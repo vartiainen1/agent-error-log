@@ -251,8 +251,12 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
 [2026-08-12] AREA: diff-gate --staged outside a git repo dumps raw git usage and exits 2
   ERROR: running diff-gate --staged in a non-git directory propagates git stderr usage text and exit code 2 - no clean not-a-git-repo message
   CAUSE: git diff --cached failure is passed through verbatim instead of being caught and reported
-  FIX: (pending — fill in after fixing)
-  STATUS: OPEN.
+  FIX: diff-gate now probes `git rev-parse --is-inside-work-tree`
+         before running git diff and returns a clean one-line
+         message (rc 2 preserved); pinned by
+         test_git_modes_outside_repo_clean_error (agent-diff-gate
+         PR #1).
+  STATUS: FIXED.
 
 [2026-08-12] AREA: error-log validates an unparseable log as clean (No entries found, exit 0)
   ERROR: a corrupt/unparseable errors.txt reports No entries found and exits 0 instead of failing loudly
