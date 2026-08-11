@@ -64,7 +64,10 @@ agent-error-log/
 ├── AGENTS.md               ← instructions your AI agent should read
 ├── CHANGELOG.md            ← release history
 ├── CONTRIBUTING.md         ← how to contribute
+├── SECURITY.md             ← vulnerability reporting policy
+├── CODE_OF_CONDUCT.md      ← community guidelines
 ├── LICENSE                 ← MIT
+├── pyproject.toml          ← optional pip packaging (no runtime deps)
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
@@ -80,7 +83,7 @@ agent-error-log/
 **stdlib-only Python 3** and plain shell — no pip installs, no build step.
 Works on Windows / macOS / Linux.
 
-## Quick start (3 steps)
+## Quick start
 
 1. **Copy the folder** to the root of your project (see *Git gate placement*
    below for other locations). Rename it if you like.
@@ -288,16 +291,6 @@ lands, so the squash title is exactly what gets re-checked on `master`.
   log lives in a subfolder, set it to the repo-root-relative path (e.g.
   `LOGNAME=docs/errors.txt`) — the hook matches staged paths verbatim.
 
-## Compatibility & security
-
-- **Python 3.8+**, stdlib only. The shell hook runs under git-bash / sh
-  (Windows, macOS, Linux).
-- The error log may contain sensitive details (paths, payloads, stack
-  traces). **Never log credentials or secrets** — keep the repo private if
-  in doubt. `.gitignore` already excludes `__pycache__/` and `*.pyc`.
-- The hook invokes Python from `PATH`; override with `PYTHON` if your
-  interpreter is elsewhere.
-
 ## FAQ
 
 - **Do I need a specific LLM?** No. Any model that can read text and run
@@ -332,10 +325,10 @@ instant, and the validator is fine at thousands of lines.
 
 **CI** — a GitHub Actions workflow (`.github/workflows/ci.yml`) runs the unit
 tests, the linter, and a syntax check of every hook script (`git-commitmsg-hook.sh`
-and `hooks/*.sh`) on every push and pull request, across Python 3.9–3.12 on
-Linux and Windows. This is the enforcement backstop described in *Known
-limitation: `--no-verify`*: even a bypassed hook can't hide a broken log or a
-failing test.
+and `hooks/*.sh`) on every push and pull request, across Python 3.9 / 3.11 /
+3.12 on Linux and Windows. This is the enforcement backstop described in
+*Known limitation: `--no-verify`*: even a bypassed hook can't hide a broken
+log or a failing test.
 
 **Releases** — the version at the top of `CHANGELOG.md` is the single source
 of truth. Bump it and push to `master`: the release workflow
@@ -343,22 +336,28 @@ of truth. Bump it and push to `master`: the release workflow
 GitHub Release with that changelog section as the body — publish it on the
 Releases page when ready.
 
-## Companion tool
+## Security
 
-- [**agent-decision-log**](https://github.com/vartiainen1/agent-decision-log) -
-  logs what your agent chose and why, so the next session starts from
-  *"we already decided X"* instead of re-exploring it. Proactive memory.
+- **Python 3.9+**, stdlib only. The shell hook runs under git-bash / sh
+  (Windows, macOS, Linux).
+- The error log may contain sensitive details (paths, payloads, stack
+  traces). **Never log credentials or secrets** — keep the repo private if
+  in doubt. `.gitignore` already excludes `__pycache__/` and `*.pyc`.
+- The hook invokes Python from `PATH`; override with `PYTHON` if your
+  interpreter is elsewhere.
+- To report a vulnerability, use the private advisory path in
+  [`SECURITY.md`](SECURITY.md) — never a public issue.
 
-Two tools, same shape, same lifecycle verbs: this one prevents repeating
-failures, the companion prevents repeating exploration.
+## Companion tools
 
-## License
+The agent-memory family — same shape, same lifecycle verbs, four layers:
 
-MIT — see [LICENSE](LICENSE).
-
----
-
-[Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
+| Repo | What it remembers | How it works |
+|---|---|---|
+| **agent-error-log (this)** | what BROKE | text log + linter + git gate |
+| [agent-decision-log](https://github.com/vartiainen1/agent-decision-log) | what was CHOSEN and why | append-only decisions + currency chain |
+| [agent-log-ai](https://github.com/vartiainen1/agent-log-ai) | *why* it kept happening | heuristics select → LLM reasons |
+| [agent-diff-gate](https://github.com/vartiainen1/agent-diff-gate) | what must never be COMMITTED | pre-commit diff scan + gate |
 
 ## Installing with pip (optional)
 
@@ -378,6 +377,10 @@ error-log --help
   against the file's folder.
 - `--init` works identically from an installed copy (built-in templates).
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
 ## Dogfood ledger
 
 This repo is reviewed by its own family gate. **agent-diff-gate** was run
@@ -385,7 +388,7 @@ over this repo's entire history (initial commit → `HEAD`):
 
 | | |
 |---|---|
-| Commits scanned | 38 (~2,800 diff lines) |
+| Commits scanned | 41 (~2,800 diff lines) |
 | Findings | **17** — 6 HIGH · 6 MEDIUM · 5 LOW |
 | Classes | R2 ×6 (HIGH) · R4 ×6 (MEDIUM) · R6 ×5 (LOW) |
 | Suppressed | **none** — every finding is fixed, tracked in `errors.txt`, or documented here |
@@ -404,3 +407,5 @@ Reproduce from this repo:
 git diff $(git rev-list --max-parents=0 HEAD) HEAD \
   | python <path-to>/agent-diff-gate/check_diff.py --stdin --json
 ```
+
+[Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)

@@ -206,6 +206,16 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   FIX: pyproject.toml + console script + installed-mode defaults guard + packaging CI + gated publish
   STATUS: OPEN
 
+[2026-08-11] AREA: README restructure - canonical family order + corrected details
+  ERROR: README sections drifted out of the family order; stale ledger
+         rows and details (missing License in log-ai, Python 3.8 claim
+         vs the 3.9/3.11/3.12 matrix, stray footer placement)
+  CAUSE: incremental README edits landed without a canonical template;
+         the family grew to four repos while each README kept its own order
+  FIX: restructured all four READMEs to one canonical section order and
+       corrected every stale detail
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
