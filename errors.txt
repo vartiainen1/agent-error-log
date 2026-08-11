@@ -217,3 +217,12 @@ the entry for you and validates the status):
     CAUSE: <root cause — write this BEFORE fixing>
     FIX: <what fixed it — fill in after fixing>
     STATUS: FIXED | PARTIAL | OPEN | MITIGATED | WORKAROUND
+[2026-08-11] AREA: dogfood ledger - full-history gate scan documented in README
+  ERROR: the README had no visible evidence trail that the family gate
+         reviews this repo's own code
+  CAUSE: the reputation strategy needs the dogfood proof visible per repo;
+         the ledger records the real scan results (17 findings, none suppressed)
+  FIX: README gained the Dogfood ledger section - full-history scan of
+       36 commits: 17 findings (R2 x6 / R4 x6 / R6 x5), every class
+       classified, none suppressed.
+  STATUS: FIXED.
