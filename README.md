@@ -75,8 +75,7 @@ agent-error-log/
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
 ├── _test_errors.py         140 unit tests for the tooling
 ├── _check_readme_count.py  README test-count drift guard (CI)
-├── _check_readme_count.py  README test-count drift guard (CI)
-├── _check_readme_count.py  README test-count drift guard (CI)
+├── _check_readme_style.py  family README style guard (CI)
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
 ├── hooks/                  optional harness-level --no-verify blockers
 ├── rules.txt               RULES template (how the agent behaves)
@@ -401,7 +400,7 @@ prints the full list). The classes that appear in this repo's history:
 
 | | |
 |---|---|
-| Commits scanned | 43 (~2,900 diff lines) |
+| Commits scanned | 44 (~3,100 diff lines) |
 | Findings | **17** — 6 HIGH · 6 MEDIUM · 5 LOW |
 | Classes | R2 ×6 (HIGH) · R4 ×6 (MEDIUM) · R6 ×5 (LOW) |
 | Suppressed | **none** — every finding is fixed, tracked in `errors.txt`, or documented here |

@@ -273,3 +273,15 @@ the entry for you and validates the status):
          window; findings themselves are unchanged (17: R2 x6 / R4 x6 / R6 x5)
   FIX: refreshed the ledger row (36 -> 38 commits, ~2,700 -> ~2,800 lines).
   STATUS: FIXED.
+
+[2026-08-11] AREA: README family style drift guard - canonical section order + companion badges
+  ERROR: the README audit fixes are one-shot - nothing mechanical
+         stops the canonical family structure (title, 3 companion
+         badges, License last, Development before Security) from
+         silently drifting back
+  CAUSE: only a manual cross-repo audit ever enforced the README
+         contract; no CI job checked it on every push/PR
+  FIX: added _check_readme_style.py (identical in all four repos;
+       derives its own repo name) enforcing the family contract,
+       wired into the docs-guard CI job on every push/PR.
+  STATUS: FIXED.

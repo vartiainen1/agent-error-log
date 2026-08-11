@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: sh -n git-commitmsg-hook.sh hooks/block-no-verify.sh hooks/block-no-verify-hook.sh
   docs-guard:
-    name: README test-count drift guard
+    name: README drift guards (count + family style)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,6 +49,8 @@ jobs:
 
       - name: Drift guard (README count vs actual suite)
         run: python3 _check_readme_count.py
+      - name: Family README style guard (section order + companion badges)
+        run: python3 _check_readme_style.py
 
   packaging:
     name: packaging (build + install + smoke)
