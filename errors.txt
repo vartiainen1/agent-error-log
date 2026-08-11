@@ -242,4 +242,4 @@ the entry for you and validates the status):
   CAUSE: the gate scans initial commit -> HEAD, so the fix PRs grew the
          window; findings themselves are unchanged (17: R2 x6 / R4 x6 / R6 x5)
   FIX: refreshed the ledger row (36 -> 38 commits, ~2,700 -> ~2,800 lines).
-  STATUS: OPEN.
+  STATUS: FIXED.
