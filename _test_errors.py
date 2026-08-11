@@ -365,6 +365,9 @@ t("check-commit: missing msg file blocked",
 t("check-commit: internal spaces collapsed like the hook",
   t_checkcommit(d9.name, p9.read_text(encoding="utf-8"),
                 "fix (AREA:  payment   webhook parser)\n") == 0)
+t("check-commit: GitHub squash-merge (#NN) suffix stripped",
+  t_checkcommit(d9.name, p9.read_text(encoding="utf-8"),
+                "fix webhook (AREA: payment webhook parser) (#31)\n") == 0)
 d9.cleanup()
 
 # --- --init (one-command adoption) ------------------------------------------

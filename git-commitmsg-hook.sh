@@ -57,6 +57,7 @@ fi
 msgfile="$1"
 line="$(tr -d '\r' < "$msgfile" 2>/dev/null | grep -i -m1 -E 'AREA:|LOG:')"
 area="$(printf '%s\n' "$line" | sed -E 's/^.*(AREA|LOG):[[:space:]]*//I' \
+        | sed -E 's/[[:space:]]*\(#[0-9]+\)[[:space:]]*$//' \
         | sed -E 's/[),.;:]+[[:space:]]*$//' | tr -s ' ')"
 
 if [ -z "$area" ]; then
