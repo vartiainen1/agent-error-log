@@ -377,18 +377,26 @@ error-log --help
   against the file's folder.
 - `--init` works identically from an installed copy (built-in templates).
 
-## License
-
-MIT — see [LICENSE](LICENSE).
 
 ## Dogfood ledger
 
-This repo is reviewed by its own family gate. **agent-diff-gate** was run
-over this repo's entire history (initial commit → `HEAD`):
+This repo is reviewed by its own family gate — **agent-diff-gate**, a
+pre-commit diff analyzer that flags risky patterns in added code. The
+ledger below is the gate's output over this repo's entire history
+(initial commit → `HEAD`), recorded so the tool's claims are backed by
+its own findings.
+
+The gate numbers its rules R1–R14 (`python check_diff.py --list-rules`
+prints the full list). The classes that appear in this repo's history:
+
+- **R2** — silent failure: an exception swallowed without a trace
+- **R4** — duplicate logic: near-identical lines added in the same diff
+- **R6** — hardcoded URL: a non-placeholder URL in added code
+
 
 | | |
 |---|---|
-| Commits scanned | 41 (~2,800 diff lines) |
+| Commits scanned | 42 (~2,800 diff lines) |
 | Findings | **17** — 6 HIGH · 6 MEDIUM · 5 LOW |
 | Classes | R2 ×6 (HIGH) · R4 ×6 (MEDIUM) · R6 ×5 (LOW) |
 | Suppressed | **none** — every finding is fixed, tracked in `errors.txt`, or documented here |
@@ -409,3 +417,7 @@ git diff $(git rev-list --max-parents=0 HEAD) HEAD \
 ```
 
 [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
+
+## License
+
+MIT — see [LICENSE](LICENSE).

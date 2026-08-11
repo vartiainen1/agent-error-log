@@ -216,6 +216,16 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
        corrected every stale detail
   STATUS: FIXED.
 
+[2026-08-11] AREA: README ending structure - License not last, Dogfood ledger lacks lead-in
+  ERROR: README ending was out of order - License sat before the Dogfood
+         ledger (not the final section), and the ledger's R2/R4/R6 rows
+         appeared with no lead-in explaining what the rule IDs mean
+  CAUSE: the family README template placed License mid-file and dropped
+         the ledger's rule classes without an intro paragraph
+  FIX: moved License to the final section; added a Dogfood-ledger lead-in
+       that defines the gate and the appearing classes (R2/R4/R6)
+  STATUS: FIXED.
+
 ================================================================================
 5) TO ADD A NEW ENTRY
 ================================================================================
