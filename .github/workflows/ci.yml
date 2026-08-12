@@ -77,12 +77,21 @@ jobs:
           /tmp/pkgenv/bin/python -c "import check_errors; print('module import OK')"
   commit-gate:
     name: commit-message gate (log-before-fix)
-    if: github.event_name == 'push' # PR merge commits carry no AREA marker; PRs are gated at merge/push time
+    if: github.event_name == 'push' # GitHub merge commits carry no AREA marker; gate the authored PR tip (HEAD^2) instead
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # HEAD^2 (the authored PR tip) must resolve on merge commits
 
       - name: Re-run the log-before-fix gate on the pushed commit
         run: |
-          git log -1 --format=%B > commit_msg.txt
+          # GitHub auto-generated merge commits ("Merge pull request #NN from ...")
+          # carry no AREA marker - the authored commit on the PR branch does.
+          # Gate that authored commit (second parent, HEAD^2) on merge commits.
+          if [ "$(git rev-list --parents -n1 HEAD | wc -w)" -gt 2 ]; then
+            git log -1 --format=%B HEAD^2 > commit_msg.txt
+          else
+            git log -1 --format=%B > commit_msg.txt
+          fi
           python3 check_errors.py --check-commit commit_msg.txt
