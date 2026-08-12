@@ -710,4 +710,12 @@ with tempfile.TemporaryDirectory() as td:
     rc = _main_rc(["check_errors.py", "--log", str(p)])
 t("empty log via CLI still exits 0 (No entries)", rc == 0)
 
+
+# --- --version contract (family finding #1) --------------------------------
+t("version: flag prints version and exits 0", _main_rc(["check_errors.py", "--version"]) == 0)
+t("version: constant matches CHANGELOG first versioned header",
+  ce.VERSION == "0.9.0")
+t("version: constant is a semantic version triple",
+  len(ce.VERSION.split(".")) == 3)
+
 print(f"\nAll {PASS} tests passed.")

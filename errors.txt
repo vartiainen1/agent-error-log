@@ -239,8 +239,11 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
 [2026-08-12] AREA: version flag gap - error-log/decision-log/log-ai reject --version (rc 2), only diff-gate has it
   ERROR: the 500-test run showed error-log, decision-log and log-ai exit 2 with unrecognized arguments for --version; only diff-gate supports it
   CAUSE: the three memory tools never implemented --version; README/usage surfaces may still suggest it
-  FIX: (pending — fill in after fixing)
-  STATUS: OPEN.
+  FIX: added a VERSION constant (matching the CHANGELOG first versioned header)
+       and a --version flag to check_errors.py / check_decisions.py /
+       check_logs_ai.py, printing "<module>.py <VERSION>" and exiting 0;
+       pinned by 3 new tests per suite (CHANGELOG self-sync contract)
+  STATUS: FIXED.
 
 [2026-08-12] AREA: decision-log --init scaffolds an OPEN template decision so --has-open fails out of the box
   ERROR: fresh decision-log --init adoption leaves an OPEN template decision (auth flow - JWT over OAuth); --has-open gate fails rc 1 until it is settled
