@@ -677,4 +677,37 @@ t("default base: pip-installed module resolves to the cwd",
   ce._default_base(Path("/usr/local/lib/python3.12/site-packages/check_errors.py"))
   == Path.cwd())
 
+
+# --- corrupt-log detection (family finding #4) ------------------------------
+t("corrupt: empty text is not corrupt", not ce.is_corrupt_log(""))
+t("corrupt: whitespace-only is not corrupt", not ce.is_corrupt_log("   \n  \n\n"))
+t("corrupt: scaffolded-empty log (bars kept) is not corrupt",
+  not ce.is_corrupt_log("=" * 40 + "\nEXAMPLE ENTRIES\n" + "=" * 40 + "\n"))
+t("corrupt: real entry without bars is not corrupt",
+  not ce.is_corrupt_log(entry("2026-08-01", "real", "FIXED")))
+t("corrupt: garbage detected", ce.is_corrupt_log("\x00\x01garbage not a log\n\n  FIX: nope\n"))
+t("corrupt: plain prose detected", ce.is_corrupt_log("hello world\nthis is not a log\n"))
+t("corrupt: binary-ish detected", ce.is_corrupt_log("\x00\x01\x02\xff\nrandom bytes\n"))
+
+
+def _main_rc(argv):
+    old = sys.argv
+    sys.argv = argv
+    try:
+        return ce.main()
+    finally:
+        sys.argv = old
+
+
+with tempfile.TemporaryDirectory() as td:
+    p = Path(td) / "errors.txt"
+    p.write_bytes(b"\x00\x01garbage not a log\n\n  FIX: nope\n")
+    rc = _main_rc(["check_errors.py", "--log", str(p)])
+t("corrupt log via CLI exits 1 (fail loudly)", rc == 1)
+with tempfile.TemporaryDirectory() as td:
+    p = Path(td) / "errors.txt"
+    p.write_bytes(b"")
+    rc = _main_rc(["check_errors.py", "--log", str(p)])
+t("empty log via CLI still exits 0 (No entries)", rc == 0)
+
 print(f"\nAll {PASS} tests passed.")

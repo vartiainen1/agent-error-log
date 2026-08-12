@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Corrupt/unparseable logs now fail loudly (exit 1) instead of validating
+  clean as "No entries found". A new `is_corrupt_log()` guard in `main()`
+  makes every command (`--log`, `--lessons`, `--has-entry`, `--archive-days`,
+  `--check-commit`, `--add`) reject files whose content has neither entry
+  headers nor section separators. Genuinely empty logs still validate clean.
+
 ## [0.9.0] - 2026-08-11
 
 ### Added
