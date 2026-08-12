@@ -255,7 +255,7 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
   CAUSE: the scaffold template ships an OPEN sample instead of an example that validates clean
   FIX: MINIMAL_DECISIONS now ships only LOCKED/REVISED example entries with a
          NOTE explaining the policy; --has-open passes rc 0 on a fresh scaffold.
-         irl 4 pinned tests added (147 total), battery has-open-resolved family
+         4 pinned tests added (147 total), battery has-open-resolved family
          went 30x FAIL -> PASS through the installed binary.
   STATUS: FIXED.
 
