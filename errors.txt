@@ -209,8 +209,15 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
 [2026-08-11] AREA: professional packaging - pyproject, defaults guard, publish flow
   ERROR: professional distribution missing - no pip install, no entry points
   CAUSE: zero-dependency single-file design had no packaging manifest
-  FIX: pyproject.toml + console script + installed-mode defaults guard + packaging CI + gated publish
-  STATUS: OPEN
+  FIX: shipped pyproject.toml + [project.scripts] console scripts in all four
+       repos (error-log / decision-log / log-ai / diff-gate), setuptools-scm
+       version from git tags, installed-mode defaults guard (cwd-relative log
+       paths when installed - verified on error-log/decision-log), packaging CI
+       + PUBLISH_TO_PYPI gated publish with trusted publishing. VERIFIED live
+       2026-08-12: clean-room wheel build + fresh-venv install + console run
+       from another cwd; tag-derived version resolves under build isolation
+       (0.0.0 only under --no-build-isolation without setuptools-scm installed)
+  STATUS: FIXED.
 
 [2026-08-11] AREA: README restructure - canonical family order + corrected details
   ERROR: README sections drifted out of the family order; stale ledger

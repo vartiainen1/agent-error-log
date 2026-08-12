@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   closed - all four family tools now support it).
 
 ### Fixed
+- Professional packaging entry closed FIXED: pyproject.toml + console
+  scripts + setuptools-scm tag versions + installed-mode defaults guard +
+  PUBLISH_TO_PYPI gated publish were verified live with a clean-room wheel
+  build and fresh-venv install; the tag version resolves under build
+  isolation.
 - The `--init` scaffold and EXAMPLE ENTRIES ship only resolved
   examples - the image-resize example is now FIXED (was OPEN), so a fresh
   adopter's log starts healthy (family finding: image-resize example entry).
