@@ -3,6 +3,7 @@ Run: python _test_errors.py"""
 
 import io
 import random
+import re
 import sys
 import tempfile
 from datetime import date, timedelta
@@ -304,6 +305,42 @@ try:
 finally:
     ce._STDIN_QUEUE = None
     d11.cleanup()
+
+
+# --- scaffold example policy: no OPEN example entries (finding: image-resize) ---
+def _example_section(text):
+    """The EXAMPLE ENTRIES section of a scaffolded/log text, or '' if absent."""
+    m = re.search(r"EXAMPLE ENTRIES.*?\n(?P<body>.*?)(?:\n={10,}|\n5\) TO ADD|\Z)", text, re.S)
+    return m.group("body") if m else ""
+
+
+t("scaffold example section ships no OPEN status",
+  "STATUS: OPEN." not in _example_section(ce.MINIMAL_ERRORS))
+t("scaffold image-resize example is FIXED",
+  re.search(r"AREA: image resize service timeouts\n  ERROR: resize job hangs[^\n]*\n"
+            r"  CAUSE: Pillow opens the full image[^\n]*\n"
+            r"  FIX: stream-resize[^\n]*\n(?:       [^\n]*\n)?  STATUS: FIXED\.\n",
+            ce.MINIMAL_ERRORS) is not None)
+t("scaffold example entries all resolved (no OPEN in section)",
+  "STATUS: OPEN." not in _example_section(ce.MINIMAL_ERRORS))
+t("scaffold still documents OPEN in the vocabulary header",
+  "Statuses: FIXED | PARTIAL | OPEN | MITIGATED |" in ce.MINIMAL_ERRORS)
+t("live errors.txt example section has no OPEN",
+  "STATUS: OPEN." not in _example_section(Path(__file__).resolve().parent.joinpath("errors.txt").read_text(encoding="utf-8")))
+
+# --init scaffold (real file) ships a healthy example section
+dI = tempfile.TemporaryDirectory()
+try:
+    tI = Path(dI.name)
+    quiet(ce.cmd_init, tI, False)  # run_tests=False
+    created = (tI / "errors.txt").read_text(encoding="utf-8")
+    t("init scaffold has zero OPEN example entries",
+      "STATUS: OPEN." not in _example_section(created))
+    t("init scaffold has the FIXED image-resize example",
+      "AREA: image resize service timeouts" in created
+      and "STATUS: FIXED." in created)
+finally:
+    dI.cleanup()
 
 
 # --- lessons (--lessons) -----------------------------------------------------

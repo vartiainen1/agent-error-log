@@ -73,7 +73,7 @@ agent-error-log/
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
-├── _test_errors.py         166 unit tests for the tooling
+├── _test_errors.py         173 unit tests for the tooling
 ├── _check_readme_count.py  README test-count drift guard (CI)
 ├── _check_readme_style.py  family README style guard (CI)
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
@@ -100,7 +100,7 @@ Works on Windows / macOS / Linux.
 3. **Run it:**
    ```sh
    python start.py        # boots the session: health check + open errors + notes
-   python _test_errors.py # sanity-check the tooling (all 166 should pass)
+   python _test_errors.py # sanity-check the tooling (all 173 should pass)
    ```
 
 ### Adopting with a custom agent (no AGENTS.md support)
@@ -125,8 +125,6 @@ STEP 0 - ERROR-LOG HEALTH CHECK (check_errors.py):
   RESULT: log healthy - safe to code.
 
 ACTIVE / UNRESOLVED ERRORS (non-FIXED, from the error log):
-  [2026-08-07] AREA: image resize service timeouts
-      STATUS: OPEN.
   [2026-08-08] AREA: search API rate limit
       STATUS: MITIGATED.
 ```
@@ -324,7 +322,7 @@ printf 'area\nerror\ncause\nfix\nOPEN\n' | python check_errors.py --add --stdin
 ## Development
 
 ```sh
-python _test_errors.py   # 166 tests: parsing, validation, gate, add, archive, lessons, init
+python _test_errors.py   # 173 tests: parsing, validation, gate, add, archive, lessons, init
 ```
 
 The tests build throwaway logs in temp dirs — they never touch your real

@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   closed - all four family tools now support it).
 
 ### Fixed
+- The `--init` scaffold and EXAMPLE ENTRIES ship only resolved
+  examples - the image-resize example is now FIXED (was OPEN), so a fresh
+  adopter's log starts healthy (family finding: image-resize example entry).
 - Corrupt/unparseable logs now fail loudly (exit 1) instead of validating
   clean as "No entries found". A new `is_corrupt_log()` guard in `main()`
   makes every command (`--log`, `--lessons`, `--has-entry`, `--archive-days`,
