@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   closed - all four family tools now support it).
 
 ### Fixed
+- CI commit-message gate now gates the authored PR tip (HEAD^2)
+  on GitHub merge commits, so master stops showing a red X on
+  `gh pr merge --merge` merges (family finding, all four repos)
 - Professional packaging entry closed FIXED: pyproject.toml + console
   scripts + setuptools-scm tag versions + installed-mode defaults guard +
   PUBLISH_TO_PYPI gated publish were verified live with a clean-room wheel

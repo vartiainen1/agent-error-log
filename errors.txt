@@ -338,3 +338,19 @@ the entry for you and validates the status):
        derives its own repo name) enforcing the family contract,
        wired into the docs-guard CI job on every push/PR.
   STATUS: FIXED.
+
+[2026-08-12] AREA: CI commit-message gate blocks GitHub merge commits on master (red X)
+  ERROR: master CI shows a red X since PR #45 - the commit-gate
+         job re-checks the pushed commit message, but
+         gh pr merge --merge creates a GitHub auto-generated
+         merge commit ("Merge pull request #NN from branch")
+         that carries no AREA marker, so the gate blocks it
+  CAUSE: the gate runs git log -1 on the pushed HEAD; squash-merge
+         messages carry (AREA: ...) (#NN) and pass, merge-commit
+         messages carry nothing. The ci.yml comment even said
+         "PR merge commits carry no AREA marker" but the gate
+         never implemented the merge-commit case
+  FIX: gate the authored PR tip (HEAD^2) instead when HEAD is a
+       merge commit (fetch-depth: 0 so parents resolve); direct
+       pushes are unchanged. Same fix in all four repos.
+  STATUS: OPEN.

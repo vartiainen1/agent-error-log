@@ -856,4 +856,12 @@ t("MINIMAL_HOOK: squash-merge (#NN) strip present like git-commitmsg-hook.sh",
 t("MINIMAL_HOOK: sed chain = greedy + squash-strip + punctuation (3 steps)",
   ce.MINIMAL_HOOK.count("sed -E") == 3 and "tr -s ' '" in ce.MINIMAL_HOOK)
 
+
+_ciyml = (Path(__file__).resolve().parent / ".github" / "workflows" / "ci.yml").read_text(
+    encoding="utf-8")
+t("ci: commit-gate fetches full history so HEAD^2 resolves (merge-aware gate)",
+  "fetch-depth: 0" in _ciyml and "actions/checkout@v4" in _ciyml)
+t("ci: commit-gate gates the authored PR tip (HEAD^2) on merge commits",
+  "HEAD^2" in _ciyml and "git rev-list --parents -n1 HEAD" in _ciyml)
+
 print(f"\nAll {PASS} tests passed.")
