@@ -73,7 +73,7 @@ agent-error-log/
 ├── .gitignore
 ├── start.py                session bootstrap (STEP 0 health check)
 ├── check_errors.py         error-log tooling: validate / gate / add / archive
-├── _test_errors.py         155 unit tests for the tooling
+├── _test_errors.py         166 unit tests for the tooling
 ├── _check_readme_count.py  README test-count drift guard (CI)
 ├── _check_readme_style.py  family README style guard (CI)
 ├── git-commitmsg-hook.sh   the log-before-fix git gate
@@ -100,7 +100,7 @@ Works on Windows / macOS / Linux.
 3. **Run it:**
    ```sh
    python start.py        # boots the session: health check + open errors + notes
-   python _test_errors.py # sanity-check the tooling (all 155 should pass)
+   python _test_errors.py # sanity-check the tooling (all 166 should pass)
    ```
 
 ### Adopting with a custom agent (no AGENTS.md support)
@@ -264,6 +264,7 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 | `python check_errors.py` | validates every entry (template fields + canonical statuses `FIXED \| PARTIAL \| OPEN \| MITIGATED \| WORKAROUND`), flags duplicates and bad dates. Exit 0 = healthy |
 | `--has-entry "<AREA>"` | mechanical gate: exit 0 only if the error is already logged |
 | `--add` | interactive scaffolder — writes a template-perfect entry above section 5 |
+| `--add --stdin` | non-interactive scaffolder \u2014 reads AREA/ERROR/CAUSE/FIX/STATUS from piped stdin, one per line, no prompts; required fields and invalid input fail loudly with no partial entry; optional fields default as if Enter were pressed |
 | `--archive-days N` | preview FIXED entries older than N days |
 | `--archive-days N --apply` | actually move them into the ARCHIVED section (idempotent) |
 | `--log PATH` | point the tooling at any error log |
@@ -271,6 +272,12 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 | `--lessons --apply` | write the distilled LESSONS section into `rules.txt` |
 | `--check-commit FILE` | gate on a commit-message file: exit 0 only if it names a logged error (`AREA:`/`LOG:` marker) — the CI server-side backstop |
 | `--init` | one-command adoption: scaffold `errors.txt`/`rules.txt`/`notes.txt`, install the commit-msg hook, health-check, run the tests (`--target DIR`, `--no-tests`) |
+
+Headless / CI usage \u2014 pipe the five answers, one per line:
+
+```
+printf 'area\nerror\ncause\nfix\nOPEN\n' | python check_errors.py --add --stdin
+```
 
 ## Customization
 
@@ -317,7 +324,7 @@ lands, so the squash title is exactly what gets re-checked on `master`.
 ## Development
 
 ```sh
-python _test_errors.py   # 155 tests: parsing, validation, gate, add, archive, lessons, init
+python _test_errors.py   # 166 tests: parsing, validation, gate, add, archive, lessons, init
 ```
 
 The tests build throwaway logs in temp dirs — they never touch your real

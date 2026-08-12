@@ -224,6 +224,88 @@ with mock.patch("check_errors.input", return_value=""):
     except SystemExit:
         t("ask rejects empty required", True)
 
+# --- non-interactive --stdin mode (family finding: truncated piped stdin) ---
+def _set_stdin_queue(q):
+    old = ce._STDIN_QUEUE
+    ce._STDIN_QUEUE = list(q)
+    return old
+
+
+def _stdin_add(text, log, answers):
+    old = _set_stdin_queue(answers)
+    try:
+        return ce.cmd_add(text, log)
+    finally:
+        ce._STDIN_QUEUE = old
+
+
+def _exit_code(fn, *a, **kw):
+    try:
+        fn(*a, **kw)
+        return None
+    except SystemExit as e:
+        return e.code
+
+
+d7, p7 = tmp_log(sample_log())
+try:
+    t("stdin add full answers returns 0",
+      quiet(_stdin_add, p7.read_text(encoding="utf-8"), p7,
+            ["s area", "s boom", "s cause", "s fix", "OPEN"]) == 0)
+    a7 = p7.read_text(encoding="utf-8")
+    t("stdin add writes the entry",
+      "AREA: s area" in a7 and "STATUS: OPEN." in a7 and "FIX: s fix" in a7)
+    t("stdin added entry validates", quiet(ce.cmd_check, a7) == 0)
+finally:
+    d7.cleanup()
+
+# exhausted answers fall back to defaults (as pressing Enter would)
+d8, p8 = tmp_log(sample_log())
+try:
+    t("stdin add truncated answers fall back to defaults",
+      quiet(_stdin_add, p8.read_text(encoding="utf-8"), p8,
+            ["s8", "e8", "c8", "f8"]) == 0)
+    a8 = p8.read_text(encoding="utf-8")
+    t("stdin add truncated defaults applied",
+      "AREA: s8" in a8 and "STATUS: OPEN." in a8)
+finally:
+    d8.cleanup()
+
+# missing required answer fails loudly, writes nothing
+d9, p9 = tmp_log(sample_log())
+try:
+    t("stdin add missing required aborts",
+      _exit_code(_stdin_add, p9.read_text(encoding="utf-8"), p9,
+                 ["", "e9", "c9", "f9", "OPEN"]) == 1)
+    t("stdin add missing required writes nothing",
+      "AREA: " not in [l for l in p9.read_text(encoding="utf-8").splitlines()
+                       if l.startswith("[")])
+finally:
+    d9.cleanup()
+
+# invalid STATUS fails loudly instead of the interactive retry loop
+d10, p10 = tmp_log(sample_log())
+try:
+    t("stdin add invalid status aborts",
+      _exit_code(_stdin_add, p10.read_text(encoding="utf-8"), p10,
+                 ["a10", "e10", "c10", "f10", "NOPE"]) == 1)
+    t("stdin add invalid status writes nothing",
+      "AREA: a10" not in p10.read_text(encoding="utf-8"))
+finally:
+    d10.cleanup()
+
+# full CLI: --add --stdin through main() with piped stdin
+d11, p11 = tmp_log(sample_log())
+try:
+    with mock.patch("check_errors.sys.argv", ["check_errors.py", "--add", "--stdin", "--log", str(p11)]), \
+          mock.patch("check_errors.sys.stdin", io.StringIO("m11\ne11\nc11\nf11\nOPEN\n")):
+        t("stdin add via main returns 0", quiet(ce.main) == 0)
+    t("stdin add via main writes entry", "AREA: m11" in p11.read_text(encoding="utf-8"))
+finally:
+    ce._STDIN_QUEUE = None
+    d11.cleanup()
+
+
 # --- lessons (--lessons) -----------------------------------------------------
 
 def lessons_log():
