@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- README Verification section documents the real battery record
+  (18,120 installed-binary executions across four rounds, 0 failed).
+
 - `--version` flag prints the tool version and exits 0 (family finding #1
 - `--stdin` non-interactive mode for `--add`: the five answers
   (AREA/ERROR/CAUSE/FIX/STATUS) are read from piped stdin, one per line,

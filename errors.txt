@@ -358,3 +358,14 @@ the entry for you and validates the status):
        on all four master runs (#31582490188, #31582495302, #31582500206,
        #31582490474-equivalent diff-gate run) - merge commits accepted.
   STATUS: FIXED.
+[2026-08-12] AREA: README Verification section documents the real battery record
+  ERROR: the README showed only unit-test counts and CI badges; the
+         real battery record (18,120 installed-binary executions, 0
+         failures) was invisible to users
+  CAUSE: the battery runs lived only in a scratch folder outside the
+         repos, so the strongest evidence never reached the README
+  FIX: README gained a Verification section documenting the four
+       battery rounds (500 -> 1,500 -> 4,000 -> 12,120 executions;
+       18,120 total, 0 failed) and the finding-to-fix trail each
+       round surfaced
+  STATUS: FIXED.
