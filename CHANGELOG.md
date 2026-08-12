@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--version` flag prints the tool version and exits 0 (family finding #1
+  closed - all four family tools now support it).
+
 ### Fixed
 - Corrupt/unparseable logs now fail loudly (exit 1) instead of validating
   clean as "No entries found". A new `is_corrupt_log()` guard in `main()`

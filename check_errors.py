@@ -25,6 +25,7 @@ Exit codes: 0 = ok / gate passed, 1 = validation errors or gate failed.
 """
 
 from __future__ import annotations
+VERSION = "0.9.0"
 
 import argparse
 import os
@@ -892,7 +893,12 @@ def main() -> int:
                          "directory)")
     ap.add_argument("--no-tests", action="store_true",
                     help="with --init: skip the tooling's unit-test run")
+    ap.add_argument("--version", action="store_true", help="print version and exit")
     args = ap.parse_args()
+
+    if args.version:
+        print(f"check_errors.py {VERSION}")
+        return 0
 
     if args.init:
         return cmd_init(args.target or ".", run_tests=not args.no_tests)
