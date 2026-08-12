@@ -353,4 +353,8 @@ the entry for you and validates the status):
   FIX: gate the authored PR tip (HEAD^2) instead when HEAD is a
        merge commit (fetch-depth: 0 so parents resolve); direct
        pushes are unchanged. Same fix in all four repos.
-  STATUS: OPEN.
+       VERIFIED 2026-08-12: PRs #50/#38/#33/#3 merged via real merge
+       commits; the commit-message gate (log-before-fix) job now passes
+       on all four master runs (#31582490188, #31582495302, #31582500206,
+       #31582490474-equivalent diff-gate run) - merge commits accepted.
+  STATUS: FIXED.
