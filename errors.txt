@@ -261,8 +261,8 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
 [2026-08-12] AREA: error-log validates an unparseable log as clean (No entries found, exit 0)
   ERROR: a corrupt/unparseable errors.txt reports No entries found and exits 0 instead of failing loudly
   CAUSE: the entry parser is lenient: unparseable lines are skipped, so garbage validates clean
-  FIX: (pending — fill in after fixing)
-  STATUS: OPEN.
+  FIX: added is_corrupt_log() guard in main() - any file whose content has neither entry headers nor section separators is rejected with a clear message and exit 1; genuinely empty logs still validate clean
+  STATUS: FIXED.
 
 [2026-08-12] AREA: interactive scaffolds abort on truncated piped stdin (error-log --add, decision-log --decide/--revise/--resolve)
   ERROR: piping fewer than the full prompt chain aborts the scaffold at EOF; scripts must answer every prompt including STATUS/FILES

@@ -161,6 +161,21 @@ def parse_entries(text: str) -> list[ErrorEntry]:
     return entries
 
 
+def is_corrupt_log(text: str) -> bool:
+    """True if the file has content but nothing recognizable as an error log.
+
+    A genuinely empty log (fresh scaffold, everything archived away) is
+    valid-but-empty and must still validate clean. A file with non-blank
+    content that contains neither an entry header (``[tag] AREA:``) nor a
+    section separator (``====``) cannot be an error log - treat it as
+    corrupt so gates fail loudly instead of validating clean.
+    """
+    if not text.strip():
+        return False
+    lines = text.splitlines()
+    return not any(ENTRY_RE.match(line) or SEP_RE.match(line) for line in lines)
+
+
 def status_token(status: str) -> str:
     """First word of a STATUS value, punctuation stripped ('FIXED.' -> 'FIXED')."""
     if not status:
@@ -887,6 +902,11 @@ def main() -> int:
         if not log_path.exists():
             raise ValidationError(f"missing error log: {log_path}")
         text = load(log_path)
+        if is_corrupt_log(text):
+            raise ValidationError(
+                f"cannot parse error log: {log_path} - no entry headers or "
+                f"section separators found; the file does not look like an "
+                f"error log (corrupt or wrong file?)")
         if args.has_entry is not None:
             return cmd_has_entry(text, args.has_entry)
         if args.add:
