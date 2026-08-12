@@ -37,8 +37,9 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
 [2026-08-07] AREA: image resize service timeouts
   ERROR: resize job hangs for >60s on 50MP inputs
   CAUSE: Pillow opens the full image into memory before resizing
-  FIX: (pending — use progressive downscaling / streaming resize)
-  STATUS: OPEN.
+  FIX: stream-resize with Image.thumbnail() + stepwise downscale, so peak
+       memory stays flat; 50MP inputs now finish in <5s
+  STATUS: FIXED.
 
 [2026-08-08] AREA: search API rate limit
   ERROR: 429 Too Many Requests on back-to-back queries
