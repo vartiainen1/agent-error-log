@@ -746,7 +746,7 @@ MINIMAL_HOOK = (
     "    exit 0\n"
     "fi\n"
     "line=\"$(tr -d '\\r' < \"$1\" 2>/dev/null | grep -i -m1 -E 'AREA:|LOG:')\"\n"
-    "area=\"$(printf '%s\\n' \"$line\" | sed -E 's/^.*(AREA|LOG):[[:space:]]*//I' | sed -E 's/[),.;:]+[[:space:]]*$//' | tr -s ' ')\"\n"
+    "area=\"$(printf '%s\\n' \"$line\" | sed -E 's/^.*(AREA|LOG):[[:space:]]*//I' | sed -E 's/[[:space:]]*\(#[0-9]+\)[[:space:]]*$//' | sed -E 's/[),.;:]+[[:space:]]*$//' | tr -s ' ')\"\n"
     "if [ -z \"$area\" ]; then\n"
     "    echo \"commit-msg BLOCKED: code staged but no 'AREA:' marker in the message.\"\n"
     "    echo \"  Log the error first: python check_errors.py --add\"\n"

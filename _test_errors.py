@@ -732,4 +732,9 @@ t("version: CHANGELOG first versioned header matches VERSION",
 t("version: constant is a semantic version triple",
   len(ce.VERSION.split(".")) == 3)
 
+t("MINIMAL_HOOK: squash-merge (#NN) strip present like git-commitmsg-hook.sh",
+  r"\(#[0-9]+\)" in ce.MINIMAL_HOOK)
+t("MINIMAL_HOOK: sed chain = greedy + squash-strip + punctuation (3 steps)",
+  ce.MINIMAL_HOOK.count("sed -E") == 3 and "tr -s ' '" in ce.MINIMAL_HOOK)
+
 print(f"\nAll {PASS} tests passed.")

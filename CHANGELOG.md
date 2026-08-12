@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   makes every command (`--log`, `--lessons`, `--has-entry`, `--archive-days`,
   `--check-commit`, `--add`) reject files whose content has neither entry
   headers nor section separators. Genuinely empty logs still validate clean.
+    - `MINIMAL_HOOK` (the scaffolded commit-msg hook) now strips the GitHub
+      squash-merge `(#NN)` suffix exactly like `git-commitmsg-hook.sh`, so a
+      hook installed via `--init` gates on the same area text as the shipped
+      hook (family finding #2 - `_extract_area` marker contract).
 
 ## [0.9.0] - 2026-08-11
 
