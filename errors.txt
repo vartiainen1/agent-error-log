@@ -277,9 +277,9 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
 
 [2026-08-12] AREA: interactive scaffolds abort on truncated piped stdin (error-log --add, decision-log --decide/--revise/--resolve)
   ERROR: piping fewer than the full prompt chain aborts the scaffold at EOF; scripts must answer every prompt including STATUS/FILES
-  CAUSE: ask() treats EOF as abort; the .exe console shims also swallow piped stdin for interactive prompts
-  FIX: (pending — fill in after fixing)
-  STATUS: OPEN.
+  CAUSE: ask() treated EOF as an abort with only a bare '(aborted)' message; probes through the installed .exe showed full piped input already worked, so the real defect was truncated input failing cryptically with no guidance and no non-interactive contract for scripts
+  FIX: new --stdin non-interactive mode on error-log --add and decision-log --decide/--revise/--resolve reads answers from piped stdin (one per line, no prompts); exhausted answers fall back to the prompt default exactly as pressing Enter would, required fields and invalid STATUS fail loudly, and no partial entry is ever written. log-ai has zero interactive prompts (verified: no input() calls), so it needs no change. Covered by 21 pinned tests (error-log +10, decision-log +11) and verified through the installed .exe binaries.
+  STATUS: FIXED.
 
 ================================================================================
 5) TO ADD A NEW ENTRY

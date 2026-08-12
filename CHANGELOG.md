@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `--version` flag prints the tool version and exits 0 (family finding #1
+- `--stdin` non-interactive mode for `--add`: the five answers
+  (AREA/ERROR/CAUSE/FIX/STATUS) are read from piped stdin, one per line,
+  with no prompts; required fields and invalid input fail loudly with no
+  partial entry; optional fields default as if Enter were pressed (family finding: interactive scaffolds abort on truncated
+  piped stdin).
   closed - all four family tools now support it).
 
 ### Fixed

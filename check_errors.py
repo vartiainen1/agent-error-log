@@ -331,8 +331,48 @@ def cmd_has_entry(text: str, substr: str) -> int:
     return 1
 
 
+_STDIN_QUEUE: Optional[list[str]] = None
+"""Non-interactive (--stdin) answer queue, in prompt order.
+
+Set by main() when --add --stdin is used: answers come from piped stdin
+(one per line, no prompts). When the queue is exhausted or a required /
+invalid answer arrives, ask() fails loudly and no partial entry is written.
+"""
+
+
+def _ask_stdin(prompt: str, required: bool, default: Optional[str]) -> str:
+    """Non-interactive ask(): consume the next piped answer, never prompt.
+
+    When the piped answers run out, remaining prompts fall back to their
+    default exactly as pressing Enter would interactively (default-bearing
+    fields only). A required field with no default fails loudly and no
+    partial entry is written.
+    """
+    if not _STDIN_QUEUE:
+        if default is not None:
+            return default
+        print(f"stdin exhausted while answering '{prompt}' - this field is "
+              f"required and has no default (non-interactive --stdin mode; "
+              f"pipe answers one per line in prompt order)")
+        raise SystemExit(1)
+    val = _STDIN_QUEUE.pop(0).strip()
+    if not val and default:
+        val = default
+    if required and not val:
+        print(f"required answer missing for '{prompt}' "
+              f"(non-interactive --stdin mode)")
+        raise SystemExit(1)
+    return val
+
+
 def ask(prompt: str, required: bool = False, default: Optional[str] = None) -> str:
-    """Single-line interactive prompt (Ctrl-C/EOF aborts cleanly)."""
+    """Single-line interactive prompt (Ctrl-C/EOF aborts cleanly).
+
+    With --stdin the answer is consumed from the piped queue instead and
+    no prompt is printed.
+    """
+    if _STDIN_QUEUE is not None:
+        return _ask_stdin(prompt, required, default)
     if default:
         prompt += f" [{default}]"
     try:
@@ -343,7 +383,7 @@ def ask(prompt: str, required: bool = False, default: Optional[str] = None) -> s
     if not val and default:
         val = default
     if required and not val:
-        print("Required — aborting.")
+        print("Required \u2014 aborting.")
         raise SystemExit(1)
     return val
 
@@ -364,6 +404,10 @@ def cmd_add(text: str, log_path: Path) -> int:
         st = ask("STATUS", default="OPEN").upper()
         if st in STATUSES:
             break
+        if _STDIN_QUEUE is not None:
+            print(f"invalid STATUS '{st}' - must be one of: {STATUSES} "
+                  f"(non-interactive --stdin mode)")
+            raise SystemExit(1)
         print(f"Status must be one of: {STATUSES}")
     block = (
         f"[{date.today():%Y-%m-%d}] AREA: {area}\n"
@@ -871,6 +915,11 @@ def main() -> int:
     ap.add_argument("--has-entry", metavar="SUBSTR",
                     help="gate: exit 0 only if an entry with this AREA is logged")
     ap.add_argument("--add", action="store_true", help="scaffold a new entry (interactive)")
+    ap.add_argument("--stdin", action="store_true",
+                    help="non-interactive: read the --add answers from piped "
+                         "stdin, one per line (AREA, ERROR, CAUSE, FIX, STATUS); "
+                         "required fields and invalid input fail loudly with no partial entry; "
+                         "optional fields default as if Enter were pressed")
     ap.add_argument("--archive-days", type=int, metavar="N",
                     help="preview FIXED entries older than N days")
     ap.add_argument("--apply", action="store_true",
@@ -895,6 +944,16 @@ def main() -> int:
                     help="with --init: skip the tooling's unit-test run")
     ap.add_argument("--version", action="store_true", help="print version and exit")
     args = ap.parse_args()
+    if args.stdin:
+        if not args.add:
+            print("WARN : --stdin only affects --add; ignoring it here.")
+        elif sys.stdin.isatty():
+            print("--stdin requires piped input "
+                  "(printf 'area\\nerror\\n...' | check_errors.py --add --stdin).")
+            return 1
+        else:
+            global _STDIN_QUEUE
+            _STDIN_QUEUE = [ln.strip() for ln in sys.stdin.read().splitlines()]
 
     if args.version:
         print(f"check_errors.py {VERSION}")
@@ -916,7 +975,9 @@ def main() -> int:
         if args.has_entry is not None:
             return cmd_has_entry(text, args.has_entry)
         if args.add:
-            return cmd_add(text, log_path)
+            rc = cmd_add(text, log_path)
+            _STDIN_QUEUE = None
+            return rc
         if args.archive_days is not None:
             return cmd_archive(text, args.archive_days, args.apply, log_path)
         if args.lessons:
