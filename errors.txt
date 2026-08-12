@@ -253,8 +253,11 @@ EXAMPLE ENTRIES (replace with your own; delete this section header)
 [2026-08-12] AREA: decision-log --init scaffolds an OPEN template decision so --has-open fails out of the box
   ERROR: fresh decision-log --init adoption leaves an OPEN template decision (auth flow - JWT over OAuth); --has-open gate fails rc 1 until it is settled
   CAUSE: the scaffold template ships an OPEN sample instead of an example that validates clean
-  FIX: (pending — fill in after fixing)
-  STATUS: OPEN.
+  FIX: MINIMAL_DECISIONS now ships only LOCKED/REVISED example entries with a
+         NOTE explaining the policy; --has-open passes rc 0 on a fresh scaffold.
+         irl 4 pinned tests added (147 total), battery has-open-resolved family
+         went 30x FAIL -> PASS through the installed binary.
+  STATUS: FIXED.
 
 [2026-08-12] AREA: diff-gate --staged outside a git repo dumps raw git usage and exits 2
   ERROR: running diff-gate --staged in a non-git directory propagates git stderr usage text and exit code 2 - no clean not-a-git-repo message
